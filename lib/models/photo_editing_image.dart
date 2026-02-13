@@ -18,7 +18,7 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
 
     switch (operationType) {
       case OperationType.exposure:
-        image = img.adjustColor(image, exposure: edit.value / 100.0);
+        image = _applyExposure(image, edit.value / 100.0);
         break;
       case OperationType.brightness:
         image = img.adjustColor(image, brightness: 1.0 + (edit.value / 100.0));
@@ -40,6 +40,24 @@ img.Image _applyWarmth(img.Image image, double value) {
       final r = (pixel.r + value * 20).clamp(0, 255).toInt();
       final b = (pixel.b - value * 20).clamp(0, 255).toInt();
       output.setPixel(x, y, img.ColorRgb8(r, pixel.g.toInt(), b));
+    }
+  }
+  return output;
+}
+
+img.Image _applyExposure(img.Image image, double value) {
+  final output = img.Image.from(image);
+  final factor = value >= 0 
+      ? 1.0 + value        
+      : 1.0 + value;       
+      
+  for (int y = 0; y < image.height; y++) {
+    for (int x = 0; x < image.width; x++) {
+      final pixel = image.getPixel(x, y);
+      final r = (pixel.r * factor).clamp(0, 255).toInt();
+      final g = (pixel.g * factor).clamp(0, 255).toInt();
+      final b = (pixel.b * factor).clamp(0, 255).toInt();
+      output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
   }
   return output;
