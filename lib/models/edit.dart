@@ -1,4 +1,12 @@
-enum OperationType { exposure, brightness, warmth }
+enum OperationType { 
+  exposure,
+  brightness,
+  highlights,
+  shadows,
+  contrast,
+  warmth, 
+  tint,
+}
 
 class Edit {
   final OperationType type;

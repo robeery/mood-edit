@@ -1,9 +1,10 @@
 
-import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 
 import 'edit.dart';
+import '../services/image_operations.dart';
 
 
 Uint8List _applyEdits(Map<String, dynamic> params) {
@@ -12,19 +13,33 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
 
   img.Image image = img.decodeImage(bytes)!;
 
-  for (final operationType in OperationType.values) {
+    for (final operationType in OperationType.values) {
     final edit = edits.where((e) => e.type == operationType).firstOrNull;
     if (edit == null) continue;
 
+    final value = edit.value / 100.0;
+
     switch (operationType) {
       case OperationType.exposure:
-        image = _applyExposure(image, edit.value / 100.0);
+        image = applyExposure(image, value);
         break;
       case OperationType.brightness:
-        image = img.adjustColor(image, brightness: 1.0 + (edit.value / 100.0));
+        image = applyBrightness(image, value);
+        break;
+      case OperationType.highlights:
+        image = applyHighlights(image, value);
+        break;
+      case OperationType.shadows:
+        image = applyShadows(image, value);
+        break;
+      case OperationType.contrast:
+        image = applyContrast(image, value);
         break;
       case OperationType.warmth:
-        image = _applyWarmth(image, edit.value / 100.0);
+        image = applyWarmth(image, value);
+        break;
+      case OperationType.tint:
+        image = applyTint(image, value);
         break;
     }
   }
@@ -32,36 +47,7 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
   return Uint8List.fromList(img.encodeJpg(image));
 }
 
-img.Image _applyWarmth(img.Image image, double value) {
-  final output = img.Image.from(image);
-  for (int y = 0; y < image.height; y++) {
-    for (int x = 0; x < image.width; x++) {
-      final pixel = image.getPixel(x, y);
-      final r = (pixel.r + value * 20).clamp(0, 255).toInt();
-      final b = (pixel.b - value * 20).clamp(0, 255).toInt();
-      output.setPixel(x, y, img.ColorRgb8(r, pixel.g.toInt(), b));
-    }
-  }
-  return output;
-}
 
-img.Image _applyExposure(img.Image image, double value) {
-  final output = img.Image.from(image);
-  final factor = value >= 0 
-      ? 1.0 + value        
-      : 1.0 + value;       
-      
-  for (int y = 0; y < image.height; y++) {
-    for (int x = 0; x < image.width; x++) {
-      final pixel = image.getPixel(x, y);
-      final r = (pixel.r * factor).clamp(0, 255).toInt();
-      final g = (pixel.g * factor).clamp(0, 255).toInt();
-      final b = (pixel.b * factor).clamp(0, 255).toInt();
-      output.setPixel(x, y, img.ColorRgb8(r, g, b));
-    }
-  }
-  return output;
-}
 
 class PhotoEditingImage {
   final Uint8List originalBytes;
