@@ -6,6 +6,20 @@ enum OperationType {
   contrast,
   warmth, 
   tint,
+  sharpness
+}
+
+extension OperationTypeExtension on OperationType {
+  double get minValue {
+    switch (this) {
+      case OperationType.sharpness:
+        return 0;
+      default:
+        return -100;
+    }
+  }
+
+  double get maxValue => 100;
 }
 
 class Edit {

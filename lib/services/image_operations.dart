@@ -128,3 +128,13 @@ img.Image applyTint(img.Image image, double value) {
   }
   return output;
 }
+
+img.Image applySharpness(img.Image image, double value) {
+  final kernel = [
+    0.0, -value, 0.0,
+    -value, 1.0 + 4 * value, -value,
+    0.0, -value, 0.0,
+  ];
+
+  return img.convolution(image, filter: kernel);
+}

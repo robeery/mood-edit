@@ -41,6 +41,9 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
       case OperationType.tint:
         image = applyTint(image, value);
         break;
+      case OperationType.sharpness:
+        image = applySharpness(image, value);
+        break;
     }
   }
 

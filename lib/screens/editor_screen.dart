@@ -197,8 +197,8 @@ class _EditorScreenState extends State<EditorScreen> {
               overlayColor: Colors.white12,
             ),
             child: Slider(
-              min: -100,
-              max: 100,
+              min: _selectedOperation.minValue,
+              max: _selectedOperation.maxValue,
               value: currentValue,
               onChanged: (value) {
                 setState(() {
@@ -215,14 +215,19 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
 
           // min/max labels
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('-100', style: TextStyle(color: _muted, fontSize: 10)),
+           Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: _selectedOperation.minValue == 0
+            ? [
                 Text('0', style: TextStyle(color: _muted, fontSize: 10)),
                 Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
+              ]
+            : [
+                Text('-100', style: TextStyle(color: _muted, fontSize: 10)),
+                Text('0', style: TextStyle(color: _muted, fontSize: 10)),
+              Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
               ],
             ),
           ),
