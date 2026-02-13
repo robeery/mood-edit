@@ -1,9 +1,10 @@
 
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../services/image_processor_service.dart';
+
+import '../models/edit.dart';
+import '../models/photo_editing_image.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key});
@@ -13,19 +14,13 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  File? _originalFile;
+  PhotoEditingImage? _photoEditingImage;
   Uint8List? _processedImage;
   bool _isProcessing = false;
-  double _brightnessValue = 1.0;
 
-  Uint8List? _originalBytes;
   final ImagePicker _picker = ImagePicker();
-  final ImageProcessorService _service = ImageProcessorService();
 
   Future<void> _pickImage() async {
-
-   
-
     final XFile? pickedFile = await _picker.pickImage(
       source: ImageSource.gallery,
       maxWidth: 1080,
@@ -35,34 +30,133 @@ class _EditorScreenState extends State<EditorScreen> {
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
       setState(() {
-        _originalFile = File(pickedFile.path);
-        _originalBytes = bytes;
+        _photoEditingImage = PhotoEditingImage(originalBytes: bytes);
         _processedImage = bytes;
-        _brightnessValue = 1.0;
       });
     }
   }
 
-  Future<void> _applyBrightness(double value) async {
-    if (_originalFile == null) return;
+  Future<void> _applyEdit(Edit edit) async {
+    if (_photoEditingImage == null) return;
 
     setState(() => _isProcessing = true);
 
-    
-    //final bytes = await _originalFile!.readAsBytes();
-    final result = await _service.adjustBrightness(_originalBytes!, value);
-    
+    _photoEditingImage!.addOrUpdateEdit(edit);
+    final result = await _photoEditingImage!.applyAllEdits();
+
     setState(() {
       _processedImage = result;
       _isProcessing = false;
     });
   }
 
+  Widget _buildControls() {
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        children: [
+          // Brightness
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Brightness'),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: () => _applyEdit(Edit(
+                      type: OperationType.brightness,
+                      value: (_photoEditingImage!.getValue(OperationType.brightness) - 1.0).clamp(-100.0, 100.0),
+                    )),
+                  ),
+                  Text(_photoEditingImage!.getValue(OperationType.brightness).toStringAsFixed(1)),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _applyEdit(Edit(
+                      type: OperationType.brightness,
+                      value: (_photoEditingImage!.getValue(OperationType.brightness) + 1.0).clamp(-100.0, 100.0),
+                    )),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Exposure
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Exposure'),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: () => _applyEdit(Edit(
+                      type: OperationType.exposure,
+                      value: (_photoEditingImage!.getValue(OperationType.exposure) - 1.0).clamp(-100.0, 100.0),
+                    )),
+                  ),
+                  Text(_photoEditingImage!.getValue(OperationType.exposure).toStringAsFixed(1)),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _applyEdit(Edit(
+                      type: OperationType.exposure,
+                      value: (_photoEditingImage!.getValue(OperationType.exposure) + 1.0).clamp(-100.0, 100.0),
+                    )),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // Warmth
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Warmth'),
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove),
+                    onPressed: () => _applyEdit(Edit(
+                      type: OperationType.warmth,
+                      value: (_photoEditingImage!.getValue(OperationType.warmth) - 1.0).clamp(-100.0, 100.0),
+                    )),
+                  ),
+                  Text(_photoEditingImage!.getValue(OperationType.warmth).toStringAsFixed(1)),
+                  IconButton(
+                    icon: const Icon(Icons.add),
+                    onPressed: () => _applyEdit(Edit(
+                      type: OperationType.warmth,
+                      value: (_photoEditingImage!.getValue(OperationType.warmth) + 1.0).clamp(-100.0, 100.0),
+                    )),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 8),
+
+          ElevatedButton(
+            onPressed: _pickImage,
+            child: const Text('Change Image'),
+          ),
+
+          const SizedBox(height: 8),
+
+          // debug purpose button
+          ElevatedButton(onPressed: () {print(_photoEditingImage!.edits.toString());}, child: const Text("Print log edits"))
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Photo Editor')),
-      body: _originalFile == null
+      body: _photoEditingImage == null
           ? Center(
               child: ElevatedButton(
                 onPressed: _pickImage,
@@ -80,31 +174,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: () => _applyBrightness(_brightnessValue += 0.1),
-                            child: const Text('Brightness +'),
-                          ),
-                          ElevatedButton(
-                            onPressed: () => _applyBrightness(_brightnessValue -= 0.1),
-                            child: const Text('Brightness -'),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      ElevatedButton(
-                        onPressed: _pickImage,
-                        child: const Text('Change Image'),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildControls(),
               ],
             ),
     );
