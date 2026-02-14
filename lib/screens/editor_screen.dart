@@ -227,7 +227,7 @@ class _EditorScreenState extends State<EditorScreen> {
             : [
                 Text('-100', style: TextStyle(color: _muted, fontSize: 10)),
                 Text('0', style: TextStyle(color: _muted, fontSize: 10)),
-              Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
+                Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
               ],
             ),
           ),

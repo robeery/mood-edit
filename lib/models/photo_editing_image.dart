@@ -44,6 +44,24 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
       case OperationType.sharpness:
         image = applySharpness(image, value);
         break;
+      case OperationType.vibrance:
+        image = applyVibrance(image, value);
+        break;
+      case OperationType.blackpoint:
+        image = applyBlackpoint(image, value);
+        break;
+      case OperationType.vignette:
+        image = applyVignette(image, value);
+        break;
+      case OperationType.noiseReduction:
+        image = applyNoiseReduction(image, value);
+        break;
+      case OperationType.grain:
+        image = applyGrain(image, value);
+        break;
+      case OperationType.fade:
+        image = applyFade(image, value);
+        break;
     }
   }
 
