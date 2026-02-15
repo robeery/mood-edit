@@ -1,3 +1,4 @@
+
 enum ColorRange {
   red,
   orange,
@@ -39,7 +40,8 @@ class ColorEdit {
       hue.abs() < 0.001 &&
       saturation.abs() < 0.001 &&
       luminance.abs() < 0.001;
-
+      
+  //debug purposes
   @override
   String toString() =>
       'ColorEdit(${range.name}: H=$hue, S=$saturation, L=$luminance)';

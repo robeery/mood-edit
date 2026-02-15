@@ -1,13 +1,12 @@
-
-
+// Domain layer — edit processing pipeline, run in a background isolate.
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
-import 'color_edit.dart';
-import 'edit.dart';
-import '../services/image_operations.dart';
-import '../services/color_operations.dart';
+import '../model/edit.dart';
+import '../model/color_edit.dart';
+import 'image_operations.dart';
+import 'color_operations.dart' as color_ops;
 
-
+// Top-level function required by compute() to run in a separate isolate.
 Uint8List _applyEdits(Map<String, dynamic> params) {
   final bytes = params['bytes'] as Uint8List;
   final edits = params['edits'] as List<Edit>;
@@ -15,7 +14,7 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
 
   img.Image image = img.decodeImage(bytes)!;
 
-    for (final operationType in OperationType.values) {
+  for (final operationType in OperationType.values) {
     final edit = edits.where((e) => e.type == operationType).firstOrNull;
     if (edit == null) continue;
 
@@ -67,70 +66,23 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
     }
   }
 
-   for (final colorEdit in colorEdits) {
-    image = applyColorEdit(image, colorEdit);
+  for (final colorEdit in colorEdits) {
+    image = color_ops.applyColorEdit(image, colorEdit);
   }
 
   return Uint8List.fromList(img.encodeJpg(image));
 }
 
+Future<Uint8List> processAllEdits({
+  required Uint8List originalBytes,
+  required List<Edit> edits,
+  required List<ColorEdit> colorEdits,
+}) async {
+  if (edits.isEmpty && colorEdits.isEmpty) return originalBytes;
 
-
-class PhotoEditingImage {
-  final Uint8List originalBytes;
-  final List<Edit> edits;
-
-  final List<ColorEdit> colorEdits;
-
-  PhotoEditingImage({
-    required this.originalBytes,
-    List<Edit>? edits,
-    List<ColorEdit>? colorEdits,
-  }) : edits = edits ?? [],
-       colorEdits = colorEdits ?? [];
-
-
-  void addOrUpdateEdit(Edit edit) {
-    edits.removeWhere((e) => e.type == edit.type);
-    edits.add(edit);
-  }
-
-  void removeEdit(OperationType type) {
-    edits.removeWhere((e) => e.type == type);
-  }
-
-  double getValue(OperationType type) {
-    return edits.where((e) => e.type == type).firstOrNull?.value ?? 0.0;
-  }
-
-  ColorEdit getColorEdit(ColorRange range) {
-    return colorEdits.where((e) => e.range == range).firstOrNull ?? ColorEdit(range: range);
-  }
-
-  bool hasEdit(OperationType type) {
-    return edits.any((e) => e.type == type && e.value.abs() > 0.001);
-  }
-
-  bool hasColorEdit(ColorRange range) {
-    return colorEdits.any((e) => e.range == range && !e.isEmpty);
-  }
-
-  void addOrUpdateColorEdit(ColorEdit colorEdit) {
-  colorEdits.removeWhere((e) => e.range == colorEdit.range);
-  if (!colorEdit.isEmpty) {
-    colorEdits.add(colorEdit);
-  }
-}
-
-
-
-  Future<Uint8List> applyAllEdits() async {
-    if (edits.isEmpty && colorEdits.isEmpty) return originalBytes;
-
-    return await compute(_applyEdits, {
-      'bytes': originalBytes,
-      'edits': edits,
-      'colorEdits': colorEdits,
-    });
-  }
+  return await compute(_applyEdits, {
+    'bytes': originalBytes,
+    'edits': edits,
+    'colorEdits': colorEdits,
+  });
 }

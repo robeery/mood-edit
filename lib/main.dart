@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart';
-import 'screens/editor_screen.dart';
+import 'view/editor_screen.dart';
 
 void main() {
   runApp(const MyApp());

@@ -1,8 +1,8 @@
 
 import 'package:image/image.dart' as img;
-import '../models/color_edit.dart';
+import '../model/color_edit.dart';
 
-// Hue ranges per color
+//hue ranges per color
 const Map<ColorRange, (double, double)> _colorRanges = {
   ColorRange.red:     (345, 15),
   ColorRange.orange:  (15,  45),

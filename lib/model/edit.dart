@@ -1,4 +1,5 @@
-enum OperationType { 
+
+enum OperationType {
   exposure,
   brightness,
   highlights,

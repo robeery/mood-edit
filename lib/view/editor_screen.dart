@@ -1,9 +1,9 @@
-import 'dart:typed_data';
+// MVVM View layer — renders the editor UI and delegates all state to EditorViewModel.
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../models/edit.dart';
-import '../models/color_edit.dart';
-import '../models/photo_editing_image.dart';
+import '../model/edit.dart';
+import '../model/color_edit.dart';
+import '../viewmodel/editor_viewmodel.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key});
@@ -13,13 +13,7 @@ class EditorScreen extends StatefulWidget {
 }
 
 class _EditorScreenState extends State<EditorScreen> {
-  PhotoEditingImage? _photoEditingImage;
-  Uint8List? _processedImage;
-  bool _isProcessing = false;
-  OperationType _selectedOperation = OperationType.exposure;
-  ColorRange _selectedColorRange = ColorRange.red;
-  bool _isColorMode = false; // ← toggle Basic/Color
-
+  final EditorViewModel _vm = EditorViewModel();
   final ImagePicker _picker = ImagePicker();
 
   static const _bg = Color(0xFF111111);
@@ -28,7 +22,7 @@ class _EditorScreenState extends State<EditorScreen> {
   static const _muted = Color(0xFF555555);
   static const _highlight = Color(0xFFFFFFFF);
 
-  // Culori vizuale pentru cercuri
+  
   static const Map<ColorRange, Color> _colorRangeColors = {
     ColorRange.red:     Color(0xFFFF3B30),
     ColorRange.orange:  Color(0xFFFF9500),
@@ -49,63 +43,49 @@ class _EditorScreenState extends State<EditorScreen> {
 
     if (pickedFile != null) {
       final bytes = await pickedFile.readAsBytes();
-      setState(() {
-        _photoEditingImage = PhotoEditingImage(originalBytes: bytes);
-        _processedImage = bytes;
-      });
+      _vm.loadImage(bytes);
     }
   }
 
-  Future<void> _applyEdit(Edit edit) async {
-    if (_photoEditingImage == null) return;
-    setState(() => _isProcessing = true);
-    _photoEditingImage!.addOrUpdateEdit(edit);
-    final result = await _photoEditingImage!.applyAllEdits();
-    setState(() {
-      _processedImage = result;
-      _isProcessing = false;
-    });
-  }
-
-  Future<void> _applyColorEdit(ColorEdit colorEdit) async {
-    if (_photoEditingImage == null) return;
-    setState(() => _isProcessing = true);
-    _photoEditingImage!.addOrUpdateColorEdit(colorEdit);
-    final result = await _photoEditingImage!.applyAllEdits();
-    setState(() {
-      _processedImage = result;
-      _isProcessing = false;
-    });
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      appBar: AppBar(
-        backgroundColor: _bg,
-        elevation: 0,
-        title: const Text(
-          'EDIT',
-          style: TextStyle(
-            color: _highlight,
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 4,
-          ),
-        ),
-        centerTitle: true,
-        actions: [
-          if (_photoEditingImage != null)
-            IconButton(
-              icon: const Icon(Icons.photo_library_outlined, color: _accent),
-              onPressed: _pickImage,
+    return ListenableBuilder(
+      listenable: _vm,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: _bg,
+          appBar: AppBar(
+            backgroundColor: _bg,
+            elevation: 0,
+            title: const Text(
+              'EDIT',
+              style: TextStyle(
+                color: _highlight,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 4,
+              ),
             ),
-        ],
-      ),
-      body: _photoEditingImage == null
-          ? _buildEmptyState()
-          : _buildEditor(),
+            centerTitle: true,
+            actions: [
+              if (_vm.hasImage)
+                IconButton(
+                  icon: const Icon(Icons.photo_library_outlined, color: _accent),
+                  onPressed: _pickImage,
+                ),
+            ],
+          ),
+          body: !_vm.hasImage
+              ? _buildEmptyState()
+              : _buildEditor(),
+        );
+      },
     );
   }
 
@@ -143,8 +123,8 @@ class _EditorScreenState extends State<EditorScreen> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Image.memory(_processedImage!, fit: BoxFit.contain),
-              if (_isProcessing)
+              Image.memory(_vm.processedImage!, fit: BoxFit.contain),
+              if (_vm.isProcessing)
                 Container(
                   color: Colors.black26,
                   child: const CircularProgressIndicator(
@@ -158,18 +138,18 @@ class _EditorScreenState extends State<EditorScreen> {
                 bottom: 8,
                 right: 8,
                 child: GestureDetector(
-                  onTap: () => setState(() => _isColorMode = !_isColorMode),
+                  onTap: () => _vm.toggleColorMode(),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
-                      color: _isColorMode ? _highlight : _surface,
+                      color: _vm.isColorMode ? _highlight : _surface,
                       borderRadius: BorderRadius.circular(2),
                       border: Border.all(color: _muted, width: 1),
                     ),
                     child: Text(
-                      _isColorMode ? 'COLOR' : 'BASIC',
+                      _vm.isColorMode ? 'COLOR' : 'BASIC',
                       style: TextStyle(
-                        color: _isColorMode ? _bg : _accent,
+                        color: _vm.isColorMode ? _bg : _accent,
                         fontSize: 10,
                         letterSpacing: 2,
                         fontWeight: FontWeight.w600,
@@ -186,8 +166,8 @@ class _EditorScreenState extends State<EditorScreen> {
           color: _surface,
           child: Column(
             children: [
-              _isColorMode ? _buildColorSliders() : _buildSlider(),
-              _isColorMode ? _buildColorBar() : _buildOperationBar(),
+              _vm.isColorMode ? _buildColorSliders() : _buildSlider(),
+              _vm.isColorMode ? _buildColorBar() : _buildOperationBar(),
             ],
           ),
         ),
@@ -195,10 +175,10 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  //BASIC OPS 
+  //BASIC OPS
 
   Widget _buildSlider() {
-    final currentValue = _photoEditingImage!.getValue(_selectedOperation);
+    final currentValue = _vm.getEditValue(_vm.selectedOperation);
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -208,7 +188,7 @@ class _EditorScreenState extends State<EditorScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                _selectedOperation.name.toUpperCase(),
+                _vm.selectedOperation.name.toUpperCase(),
                 style: const TextStyle(
                   color: _accent,
                   fontSize: 11,
@@ -239,18 +219,16 @@ class _EditorScreenState extends State<EditorScreen> {
               overlayColor: Colors.white12,
             ),
             child: Slider(
-              min: _selectedOperation.minValue,
-              max: _selectedOperation.maxValue,
+              min: _vm.selectedOperation.minValue,
+              max: _vm.selectedOperation.maxValue,
               value: currentValue,
               onChanged: (value) {
-                setState(() {
-                  _photoEditingImage!.addOrUpdateEdit(
-                    Edit(type: _selectedOperation, value: value),
-                  );
-                });
+                _vm.updateEditPreview(
+                  Edit(type: _vm.selectedOperation, value: value),
+                );
               },
               onChangeEnd: (value) {
-                _applyEdit(Edit(type: _selectedOperation, value: value));
+                _vm.applyEdit(Edit(type: _vm.selectedOperation, value: value));
               },
             ),
           ),
@@ -258,7 +236,7 @@ class _EditorScreenState extends State<EditorScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: _selectedOperation.minValue == 0
+              children: _vm.selectedOperation.minValue == 0
                   ? [
                       Text('0', style: TextStyle(color: _muted, fontSize: 10)),
                       Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
@@ -284,11 +262,11 @@ class _EditorScreenState extends State<EditorScreen> {
         itemCount: OperationType.values.length,
         itemBuilder: (context, index) {
           final operation = OperationType.values[index];
-          final isSelected = operation == _selectedOperation;
-          final hasEdit = _photoEditingImage!.hasEdit(operation);
+          final isSelected = operation == _vm.selectedOperation;
+          final hasEdit = _vm.hasEdit(operation);
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedOperation = operation),
+            onTap: () => _vm.setSelectedOperation(operation),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
@@ -335,7 +313,7 @@ class _EditorScreenState extends State<EditorScreen> {
   //COLOR
 
   Widget _buildColorSliders() {
-  final colorEdit = _photoEditingImage!.getColorEdit(_selectedColorRange);
+  final colorEdit = _vm.getColorEdit(_vm.selectedColorRange);
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
@@ -344,26 +322,20 @@ class _EditorScreenState extends State<EditorScreen> {
         _buildColorSliderRow(
           'HUE',
           colorEdit.hue,
-          (value) => _applyColorEdit(colorEdit.copyWith(hue: value)),   
-          (value) => setState(() {                                        
-            _photoEditingImage!.addOrUpdateColorEdit(colorEdit.copyWith(hue: value));
-          }),
+          (value) => _vm.applyColorEdit(colorEdit.copyWith(hue: value)),
+          (value) => _vm.updateColorEditPreview(colorEdit.copyWith(hue: value)),
         ),
         _buildColorSliderRow(
           'SAT',
           colorEdit.saturation,
-          (value) => _applyColorEdit(colorEdit.copyWith(saturation: value)),
-          (value) => setState(() {
-            _photoEditingImage!.addOrUpdateColorEdit(colorEdit.copyWith(saturation: value));
-          }),
+          (value) => _vm.applyColorEdit(colorEdit.copyWith(saturation: value)),
+          (value) => _vm.updateColorEditPreview(colorEdit.copyWith(saturation: value)),
         ),
         _buildColorSliderRow(
           'LUM',
           colorEdit.luminance,
-          (value) => _applyColorEdit(colorEdit.copyWith(luminance: value)),
-          (value) => setState(() {
-            _photoEditingImage!.addOrUpdateColorEdit(colorEdit.copyWith(luminance: value));
-          }),
+          (value) => _vm.applyColorEdit(colorEdit.copyWith(luminance: value)),
+          (value) => _vm.updateColorEditPreview(colorEdit.copyWith(luminance: value)),
         ),
       ],
     ),
@@ -395,8 +367,8 @@ class _EditorScreenState extends State<EditorScreen> {
             min: -100,
             max: 100,
             value: value,
-            onChanged: onChanged,        
-            onChangeEnd: onChangeEnd,    
+            onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
           ),
         ),
       ),
@@ -425,12 +397,12 @@ class _EditorScreenState extends State<EditorScreen> {
         itemCount: ColorRange.values.length,
         itemBuilder: (context, index) {
           final range = ColorRange.values[index];
-          final isSelected = range == _selectedColorRange;
-          final hasEdit = _photoEditingImage!.hasColorEdit(range);
+          final isSelected = range == _vm.selectedColorRange;
+          final hasEdit = _vm.hasColorEdit(range);
           final color = _colorRangeColors[range]!;
 
           return GestureDetector(
-            onTap: () => setState(() => _selectedColorRange = range),
+            onTap: () => _vm.setSelectedColorRange(range),
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
               child: Column(
