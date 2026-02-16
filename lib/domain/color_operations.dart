@@ -13,7 +13,7 @@ const Map<ColorRange, (double, double)> _colorRanges = {
   ColorRange.magenta: (290, 345),
 };
 
-List<double> _rgbToHsl(double r, double g, double b) {
+List<double> rgbToHsl(double r, double g, double b) {
   final max = [r, g, b].reduce((a, b) => a > b ? a : b);
   final min = [r, g, b].reduce((a, b) => a < b ? a : b);
   final delta = max - min;
@@ -37,7 +37,7 @@ List<double> _rgbToHsl(double r, double g, double b) {
   return [h * 360, s * 100, l * 100];
 }
 
-List<double> _hslToRgb(double h, double s, double l) {
+List<double> hslToRgb(double h, double s, double l) {
   s /= 100;
   l /= 100;
   h /= 360;
@@ -62,7 +62,7 @@ List<double> _hslToRgb(double h, double s, double l) {
     hue2rgb(p, q, h - 1 / 3) * 255,
   ];
 }
-
+//will replace this later with a gradual weight
 bool _isInRange(double hue, ColorRange range) {
   final (min, max) = _colorRanges[range]!;
 
@@ -91,7 +91,7 @@ img.Image applyColorEdit(img.Image image, ColorEdit edit) {
       final g = pixel.g / 255.0;
       final b = pixel.b / 255.0;
 
-      final hsl = _rgbToHsl(r, g, b);
+      final hsl = rgbToHsl(r, g, b);
       final h = hsl[0];
       final s = hsl[1];
       final l = hsl[2];
@@ -105,7 +105,7 @@ img.Image applyColorEdit(img.Image image, ColorEdit edit) {
       final newS = (s + satShift).clamp(0.0, 100.0);
       final newL = (l + lumShift).clamp(0.0, 100.0);
 
-      final rgb = _hslToRgb(newH, newS, newL);
+      final rgb = hslToRgb(newH, newS, newL);
 
       output.setPixel(x, y, img.ColorRgb8(
         rgb[0].clamp(0, 255).toInt(),

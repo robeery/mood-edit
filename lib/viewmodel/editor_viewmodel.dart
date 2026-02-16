@@ -1,8 +1,12 @@
+
 import 'package:flutter/foundation.dart';
 import '../model/edit.dart';
 import '../model/color_edit.dart';
+import '../model/color_grading_edit.dart';
 import '../model/photo_editing_image.dart';
 import '../domain/apply_edits.dart';
+
+enum EditorMode { basic, selectiveColor, colorGrading }
 
 class EditorViewModel extends ChangeNotifier {
   PhotoEditingImage? _photoEditingImage;
@@ -10,14 +14,16 @@ class EditorViewModel extends ChangeNotifier {
   bool _isProcessing = false;
   OperationType _selectedOperation = OperationType.exposure;
   ColorRange _selectedColorRange = ColorRange.red;
-  bool _isColorMode = false;
+  EditorMode _editorMode = EditorMode.basic;
+  ColorGradingZone _selectedGradingZone = ColorGradingZone.shadows;
 
   bool get hasImage => _photoEditingImage != null;
   Uint8List? get processedImage => _processedImage;
   bool get isProcessing => _isProcessing;
   OperationType get selectedOperation => _selectedOperation;
   ColorRange get selectedColorRange => _selectedColorRange;
-  bool get isColorMode => _isColorMode;
+  EditorMode get editorMode => _editorMode;
+  ColorGradingZone get selectedGradingZone => _selectedGradingZone;
 
   double getEditValue(OperationType type) {
     return _photoEditingImage?.getValue(type) ?? 0.0;
@@ -33,6 +39,15 @@ class EditorViewModel extends ChangeNotifier {
 
   bool hasColorEdit(ColorRange range) {
     return _photoEditingImage?.hasColorEdit(range) ?? false;
+  }
+
+  ColorGradingEdit getColorGradingEdit(ColorGradingZone zone) {
+    return _photoEditingImage?.getColorGradingEdit(zone) ??
+        ColorGradingEdit(zone: zone);
+  }
+
+  bool hasColorGradingEdit(ColorGradingZone zone) {
+    return _photoEditingImage?.hasColorGradingEdit(zone) ?? false;
   }
 
   void loadImage(Uint8List bytes) {
@@ -51,8 +66,13 @@ class EditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleColorMode() {
-    _isColorMode = !_isColorMode;
+  void setEditorMode(EditorMode mode) {
+    _editorMode = mode;
+    notifyListeners();
+  }
+
+  void setSelectedGradingZone(ColorGradingZone zone) {
+    _selectedGradingZone = zone;
     notifyListeners();
   }
 
@@ -66,17 +86,33 @@ class EditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateColorGradingEditPreview(ColorGradingEdit edit) {
+    _photoEditingImage!.addOrUpdateColorGradingEdit(edit);
+    notifyListeners();
+  }
+
+  Future<Uint8List> _processAllEdits() async {
+    final model = _photoEditingImage!;
+    if (model.edits.isEmpty &&
+        model.colorEdits.isEmpty &&
+        model.colorGradingEdits.isEmpty) {
+      return model.originalBytes;
+    }
+    return await processAllEdits(
+      originalBytes: model.originalBytes,
+      edits: model.edits,
+      colorEdits: model.colorEdits,
+      colorGradingEdits: model.colorGradingEdits,
+    );
+  }
+
   Future<void> applyEdit(Edit edit) async {
     if (_photoEditingImage == null) return;
     _isProcessing = true;
     notifyListeners();
 
     _photoEditingImage!.addOrUpdateEdit(edit);
-    final result = await processAllEdits(
-      originalBytes: _photoEditingImage!.originalBytes,
-      edits: _photoEditingImage!.edits,
-      colorEdits: _photoEditingImage!.colorEdits,
-    );
+    final result = await _processAllEdits();
 
     _processedImage = result;
     _isProcessing = false;
@@ -89,11 +125,20 @@ class EditorViewModel extends ChangeNotifier {
     notifyListeners();
 
     _photoEditingImage!.addOrUpdateColorEdit(colorEdit);
-    final result = await processAllEdits(
-      originalBytes: _photoEditingImage!.originalBytes,
-      edits: _photoEditingImage!.edits,
-      colorEdits: _photoEditingImage!.colorEdits,
-    );
+    final result = await _processAllEdits();
+
+    _processedImage = result;
+    _isProcessing = false;
+    notifyListeners();
+  }
+
+  Future<void> applyColorGradingEdit(ColorGradingEdit edit) async {
+    if (_photoEditingImage == null) return;
+    _isProcessing = true;
+    notifyListeners();
+
+    _photoEditingImage!.addOrUpdateColorGradingEdit(edit);
+    final result = await _processAllEdits();
 
     _processedImage = result;
     _isProcessing = false;

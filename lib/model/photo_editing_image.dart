@@ -1,19 +1,22 @@
 import 'dart:typed_data';
 import 'color_edit.dart';
+import 'color_grading_edit.dart';
 import 'edit.dart';
 
 class PhotoEditingImage {
   final Uint8List originalBytes;
   final List<Edit> edits;
-
   final List<ColorEdit> colorEdits;
+  final List<ColorGradingEdit> colorGradingEdits;
 
   PhotoEditingImage({
     required this.originalBytes,
     List<Edit>? edits,
     List<ColorEdit>? colorEdits,
+    List<ColorGradingEdit>? colorGradingEdits,
   }) : edits = edits ?? [],
-       colorEdits = colorEdits ?? [];
+       colorEdits = colorEdits ?? [],
+       colorGradingEdits = colorGradingEdits ?? [];
 
 
   void addOrUpdateEdit(Edit edit) {
@@ -42,9 +45,23 @@ class PhotoEditingImage {
   }
 
   void addOrUpdateColorEdit(ColorEdit colorEdit) {
-  colorEdits.removeWhere((e) => e.range == colorEdit.range);
-  if (!colorEdit.isEmpty) {
-    colorEdits.add(colorEdit);
+    colorEdits.removeWhere((e) => e.range == colorEdit.range);
+    if (!colorEdit.isEmpty) {
+      colorEdits.add(colorEdit);
+    }
   }
-}
+
+  ColorGradingEdit getColorGradingEdit(ColorGradingZone zone) {
+    return colorGradingEdits.where((e) => e.zone == zone).firstOrNull ??
+        ColorGradingEdit(zone: zone);
+  }
+
+  bool hasColorGradingEdit(ColorGradingZone zone) {
+    return colorGradingEdits.any((e) => e.zone == zone && !e.isEmpty);
+  }
+
+  void addOrUpdateColorGradingEdit(ColorGradingEdit edit) {
+    colorGradingEdits.removeWhere((e) => e.zone == edit.zone);
+    colorGradingEdits.add(edit);
+  }
 }

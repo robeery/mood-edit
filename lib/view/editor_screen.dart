@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../model/edit.dart';
 import '../model/color_edit.dart';
+import '../model/color_grading_edit.dart';
 import '../viewmodel/editor_viewmodel.dart';
 
 class EditorScreen extends StatefulWidget {
@@ -163,51 +164,50 @@ class _EditorScreenState extends State<EditorScreen> {
                 style: const TextStyle(color: _accent, fontSize: 11, letterSpacing: 2),
               ),
               children: [
-                ListTile(
-                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  leading: Icon(
-                    Icons.tune,
-                    color: !_vm.isColorMode ? _highlight : _muted,
-                    size: 18,
-                  ),
-                  title: Text(
-                    'BASIC OPERATIONS',
-                    style: TextStyle(
-                      color: !_vm.isColorMode ? _highlight : _muted,
-                      fontSize: 11,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  onTap: () {
-                    if (_vm.isColorMode) _vm.toggleColorMode();
-                    Navigator.of(context).pop();
-                  },
+                _buildDrawerModeTile(
+                  icon: Icons.tune,
+                  label: 'BASIC OPERATIONS',
+                  mode: EditorMode.basic,
                 ),
-                ListTile(
-                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
-                  leading: Icon(
-                    Icons.palette_outlined,
-                    color: _vm.isColorMode ? _highlight : _muted,
-                    size: 18,
-                  ),
-                  title: Text(
-                    'SELECTIVE COLOR',
-                    style: TextStyle(
-                      color: _vm.isColorMode ? _highlight : _muted,
-                      fontSize: 11,
-                      letterSpacing: 2,
-                    ),
-                  ),
-                  onTap: () {
-                    if (!_vm.isColorMode) _vm.toggleColorMode();
-                    Navigator.of(context).pop();
-                  },
+                _buildDrawerModeTile(
+                  icon: Icons.palette_outlined,
+                  label: 'SELECTIVE COLOR',
+                  mode: EditorMode.selectiveColor,
+                ),
+                _buildDrawerModeTile(
+                  icon: Icons.gradient_outlined,
+                  label: 'COLOR GRADING',
+                  mode: EditorMode.colorGrading,
                 ),
               ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawerModeTile({
+    required IconData icon,
+    required String label,
+    required EditorMode mode,
+  }) {
+    final isActive = _vm.editorMode == mode;
+    return ListTile(
+      contentPadding: const EdgeInsets.only(left: 32, right: 16),
+      leading: Icon(icon, color: isActive ? _highlight : _muted, size: 18),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: isActive ? _highlight : _muted,
+          fontSize: 11,
+          letterSpacing: 2,
+        ),
+      ),
+      onTap: () {
+        _vm.setEditorMode(mode);
+        Navigator.of(context).pop();
+      },
     );
   }
 
@@ -236,8 +236,16 @@ class _EditorScreenState extends State<EditorScreen> {
           color: _surface,
           child: Column(
             children: [
-              _vm.isColorMode ? _buildColorSliders() : _buildSlider(),
-              _vm.isColorMode ? _buildColorBar() : _buildOperationBar(),
+              _vm.editorMode == EditorMode.basic
+                  ? _buildSlider()
+                  : _vm.editorMode == EditorMode.selectiveColor
+                      ? _buildColorSliders()
+                      : _buildGradingSliders(),
+              _vm.editorMode == EditorMode.basic
+                  ? _buildOperationBar()
+                  : _vm.editorMode == EditorMode.selectiveColor
+                      ? _buildColorBar()
+                      : _buildGradingBar(),
             ],
           ),
         ),
@@ -457,6 +465,142 @@ class _EditorScreenState extends State<EditorScreen> {
     ],
   );
 }
+
+  // COLOR GRADING
+
+  Widget _buildGradingSliders() {
+    final edit = _vm.getColorGradingEdit(_vm.selectedGradingZone);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Column(
+        children: [
+          _buildGradingSliderRow(
+            'HUE',
+            edit.hue,
+            0, 360,
+            '${edit.hue.toStringAsFixed(0)}°',
+            (value) => _vm.applyColorGradingEdit(edit.copyWith(hue: value)),
+            (value) => _vm.updateColorGradingEditPreview(edit.copyWith(hue: value)),
+          ),
+          _buildGradingSliderRow(
+            'STR',
+            edit.strength,
+            0, 100,
+            '${edit.strength.toStringAsFixed(0)}%',
+            (value) => _vm.applyColorGradingEdit(edit.copyWith(strength: value)),
+            (value) => _vm.updateColorGradingEditPreview(edit.copyWith(strength: value)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGradingSliderRow(
+    String label, double value, double min, double max, String display,
+    Function(double) onChangeEnd, Function(double) onChanged,
+  ) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 32,
+          child: Text(
+            label,
+            style: const TextStyle(color: _muted, fontSize: 10, letterSpacing: 2),
+          ),
+        ),
+        Expanded(
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 1,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+              activeTrackColor: _highlight,
+              inactiveTrackColor: _muted,
+              thumbColor: _highlight,
+              overlayColor: Colors.white12,
+            ),
+            child: Slider(
+              min: min,
+              max: max,
+              value: value,
+              onChanged: onChanged,
+              onChangeEnd: onChangeEnd,
+            ),
+          ),
+        ),
+        SizedBox(
+          width: 40,
+          child: Text(
+            display,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: _highlight,
+              fontSize: 11,
+              fontWeight: FontWeight.w300,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGradingBar() {
+    return SizedBox(
+      height: 64,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: ColorGradingZone.values.length,
+        itemBuilder: (context, index) {
+          final zone = ColorGradingZone.values[index];
+          final isSelected = zone == _vm.selectedGradingZone;
+          final hasEdit = _vm.hasColorGradingEdit(zone);
+
+          return GestureDetector(
+            onTap: () => _vm.setSelectedGradingZone(zone),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 150),
+              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? _highlight : Colors.transparent,
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(
+                  color: isSelected ? _highlight : _muted,
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    zone.name.toUpperCase(),
+                    style: TextStyle(
+                      color: isSelected ? _bg : _muted,
+                      fontSize: 11,
+                      letterSpacing: 2,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (hasEdit) ...[
+                    const SizedBox(width: 4),
+                    Container(
+                      width: 4,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: isSelected ? _bg : _accent,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildColorBar() {
     return SizedBox(
