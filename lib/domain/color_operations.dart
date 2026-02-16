@@ -1,4 +1,3 @@
-
 import 'package:image/image.dart' as img;
 import '../model/color_edit.dart';
 

@@ -1,4 +1,3 @@
-// MVVM View layer — renders the editor UI and delegates all state to EditorViewModel.
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../model/edit.dart';
@@ -60,6 +59,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, _) {
         return Scaffold(
           backgroundColor: _bg,
+          endDrawer: _buildDrawer(),
           appBar: AppBar(
             backgroundColor: _bg,
             elevation: 0,
@@ -74,11 +74,12 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
             centerTitle: true,
             actions: [
-              if (_vm.hasImage)
-                IconButton(
-                  icon: const Icon(Icons.photo_library_outlined, color: _accent),
-                  onPressed: _pickImage,
+              Builder(
+                builder: (ctx) => IconButton(
+                  icon: const Icon(Icons.menu, color: _accent),
+                  onPressed: () => Scaffold.of(ctx).openEndDrawer(),
                 ),
+              ),
             ],
           ),
           body: !_vm.hasImage
@@ -116,6 +117,100 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  Widget _buildDrawer() {
+    return Drawer(
+      backgroundColor: _surface,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+              child: Text(
+                'MENU',
+                style: const TextStyle(
+                  color: _highlight,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 4,
+                ),
+              ),
+            ),
+            const Divider(color: _muted, height: 1),
+
+            // Open new picture
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined, color: _accent, size: 20),
+              title: const Text(
+                'OPEN NEW PICTURE',
+                style: TextStyle(color: _accent, fontSize: 11, letterSpacing: 2),
+              ),
+              onTap: () {
+                Navigator.of(context).pop();
+                _pickImage();
+              },
+            ),
+
+            const Divider(color: _muted, height: 1),
+
+            // Operations dropdown
+            ExpansionTile(
+              iconColor: _accent,
+              collapsedIconColor: _muted,
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+              title: Text(
+                'OPERATIONS',
+                style: const TextStyle(color: _accent, fontSize: 11, letterSpacing: 2),
+              ),
+              children: [
+                ListTile(
+                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                  leading: Icon(
+                    Icons.tune,
+                    color: !_vm.isColorMode ? _highlight : _muted,
+                    size: 18,
+                  ),
+                  title: Text(
+                    'BASIC OPERATIONS',
+                    style: TextStyle(
+                      color: !_vm.isColorMode ? _highlight : _muted,
+                      fontSize: 11,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  onTap: () {
+                    if (_vm.isColorMode) _vm.toggleColorMode();
+                    Navigator.of(context).pop();
+                  },
+                ),
+                ListTile(
+                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                  leading: Icon(
+                    Icons.palette_outlined,
+                    color: _vm.isColorMode ? _highlight : _muted,
+                    size: 18,
+                  ),
+                  title: Text(
+                    'SELECTIVE COLOR',
+                    style: TextStyle(
+                      color: _vm.isColorMode ? _highlight : _muted,
+                      fontSize: 11,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  onTap: () {
+                    if (!_vm.isColorMode) _vm.toggleColorMode();
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEditor() {
     return Column(
       children: [
@@ -133,31 +228,6 @@ class _EditorScreenState extends State<EditorScreen> {
                   ),
                 ),
 
-              // toggle mode
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: () => _vm.toggleColorMode(),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: _vm.isColorMode ? _highlight : _surface,
-                      borderRadius: BorderRadius.circular(2),
-                      border: Border.all(color: _muted, width: 1),
-                    ),
-                    child: Text(
-                      _vm.isColorMode ? 'COLOR' : 'BASIC',
-                      style: TextStyle(
-                        color: _vm.isColorMode ? _bg : _accent,
-                        fontSize: 10,
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),

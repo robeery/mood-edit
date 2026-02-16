@@ -1,4 +1,3 @@
-
 enum ColorRange {
   red,
   orange,

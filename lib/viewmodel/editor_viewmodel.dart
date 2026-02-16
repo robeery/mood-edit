@@ -1,4 +1,3 @@
-// MVVM ViewModel layer — owns all editor state and notifies the View on changes.
 import 'package:flutter/foundation.dart';
 import '../model/edit.dart';
 import '../model/color_edit.dart';

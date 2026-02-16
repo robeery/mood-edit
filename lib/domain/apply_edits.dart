@@ -1,4 +1,3 @@
-// Domain layer — edit processing pipeline, run in a background isolate.
 import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import '../model/edit.dart';
@@ -6,7 +5,7 @@ import '../model/color_edit.dart';
 import 'image_operations.dart';
 import 'color_operations.dart' as color_ops;
 
-// Top-level function required by compute() to run in a separate isolate.
+
 Uint8List _applyEdits(Map<String, dynamic> params) {
   final bytes = params['bytes'] as Uint8List;
   final edits = params['edits'] as List<Edit>;

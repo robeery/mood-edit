@@ -1,4 +1,3 @@
-// MVVM Model layer — pure data container for an editing project.
 import 'dart:typed_data';
 import 'color_edit.dart';
 import 'edit.dart';

@@ -1,4 +1,3 @@
-
 enum OperationType {
   exposure,
   brightness,
