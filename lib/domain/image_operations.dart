@@ -1,5 +1,6 @@
 import 'package:image/image.dart' as img;
 import 'dart:math';
+import 'color_operations.dart' show rgbToHsl, hslToRgb;
 
 //all of these should be improved/modified later in development
 //by using better/more complex formulas and more parameters
@@ -143,6 +144,49 @@ img.Image applySharpness(img.Image image, double value) {
   return img.convolution(image, filter: kernel);
 }
 
+
+img.Image applyDefinition(img.Image image, double value) {
+  
+  final blurred = img.gaussianBlur(img.Image.from(image), radius: 5);
+  final output = img.Image.from(image);
+
+  for (int y = 0; y < image.height; y++) {
+    for (int x = 0; x < image.width; x++) {
+      final orig = image.getPixel(x, y);
+      final blur = blurred.getPixel(x, y);
+
+      final r = (orig.r + (orig.r - blur.r) * value).clamp(0, 255).toInt();
+      final g = (orig.g + (orig.g - blur.g) * value).clamp(0, 255).toInt();
+      final b = (orig.b + (orig.b - blur.b) * value).clamp(0, 255).toInt();
+
+      output.setPixel(x, y, img.ColorRgb8(r, g, b));
+    }
+  }
+  return output;
+}
+
+
+img.Image applySaturation(img.Image image, double value) {
+  final output = img.Image.from(image);
+
+  for (int y = 0; y < image.height; y++) {
+    for (int x = 0; x < image.width; x++) {
+      final pixel = image.getPixel(x, y);
+
+      final hsl = rgbToHsl(pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0);
+      final newS = (hsl[1] + value * 100).clamp(0.0, 100.0);
+      final rgb = hslToRgb(hsl[0], newS, hsl[2]);
+
+      output.setPixel(x, y, img.ColorRgb8(
+        rgb[0].clamp(0, 255).toInt(),
+        rgb[1].clamp(0, 255).toInt(),
+        rgb[2].clamp(0, 255).toInt(),
+      ));
+    }
+  }
+  return output;
+}
+
 img.Image applyVibrance(img.Image image, double value) {
   final output = img.Image.from(image);
 
@@ -225,6 +269,7 @@ img.Image applyVignette(img.Image image, double value) {
   }
   return output;
 }
+
 //gaussian blur for now
 img.Image applyNoiseReduction(img.Image image, double value) {
   final radius = (value * 3).round().clamp(1, 3);

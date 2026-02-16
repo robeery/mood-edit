@@ -47,6 +47,12 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
       case OperationType.sharpness:
         image = applySharpness(image, value);
         break;
+      case OperationType.definition:
+        image = applyDefinition(image, value);
+        break;
+      case OperationType.saturation:
+        image = applySaturation(image, value);
+        break;
       case OperationType.vibrance:
         image = applyVibrance(image, value);
         break;

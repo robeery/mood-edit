@@ -7,6 +7,8 @@ enum OperationType {
   warmth, 
   tint,
   sharpness,
+  saturation,
+  definition,
   vibrance,
   blackpoint,
   vignette,
@@ -19,6 +21,7 @@ extension OperationTypeExtension on OperationType {
   double get minValue {
     switch (this) {
       case OperationType.sharpness:
+      case OperationType.definition:
       case OperationType.blackpoint:
       case OperationType.vignette:
       case OperationType.noiseReduction:
