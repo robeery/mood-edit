@@ -18,6 +18,7 @@ class EditorViewModel extends ChangeNotifier {
   ColorGradingZone _selectedGradingZone = ColorGradingZone.shadows;
 
   bool get hasImage => _photoEditingImage != null;
+  PhotoEditingImage? getModel() => _photoEditingImage;
   Uint8List? get processedImage => _processedImage;
   bool get isProcessing => _isProcessing;
   OperationType get selectedOperation => _selectedOperation;
@@ -53,6 +54,49 @@ class EditorViewModel extends ChangeNotifier {
   void loadImage(Uint8List bytes) {
     _photoEditingImage = PhotoEditingImage(originalBytes: bytes);
     _processedImage = bytes;
+    notifyListeners();
+  }
+
+  void printLogs() {
+    if (_photoEditingImage == null) return;
+    final model = _photoEditingImage!;
+    if(model.edits.isNotEmpty)
+    {
+      print('Edits:');
+      for (final edit in model.edits)
+        print(edit.toString());
+
+
+    }
+    if(model.colorEdits.isNotEmpty)
+    {
+      print('Color Edits:');
+      for (final colorEdit in model.colorEdits)
+        print(colorEdit.toString());
+
+    }
+    if(model.colorGradingEdits.isNotEmpty)
+    {
+      print('Color Grading Edits:');
+      for (final gradingEdit in model.colorGradingEdits)
+        print(gradingEdit.toString());
+
+    }
+    if (model.edits.isEmpty && model.colorEdits.isEmpty && model.colorGradingEdits.isEmpty) {
+      print('No edits applied.');
+    }
+  }
+
+  void resetEdits() {
+    if (_photoEditingImage == null) return;
+    _photoEditingImage = PhotoEditingImage(
+      originalBytes: _photoEditingImage!.originalBytes,
+    );
+    _processedImage = _photoEditingImage!.originalBytes;
+    _editorMode = EditorMode.basic;
+    _selectedOperation = OperationType.exposure;
+    _selectedColorRange = ColorRange.red;
+    _selectedGradingZone = ColorGradingZone.shadows;
     notifyListeners();
   }
 

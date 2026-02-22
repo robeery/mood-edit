@@ -211,9 +211,85 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
+  void _showResetDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        title: const Text(
+          'RESET',
+          style: TextStyle(
+            color: _highlight,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 4,
+          ),
+        ),
+        content: const Text(
+          'Are you sure you want to start over? This will reset your progress.',
+          style: TextStyle(color: _accent, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'NO',
+              style: TextStyle(color: _muted, fontSize: 11, letterSpacing: 2),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _vm.resetEdits();
+            },
+            child: const Text(
+              'YES',
+              style: TextStyle(color: _highlight, fontSize: 11, letterSpacing: 2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToolbarButton(String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: _surface,
+          borderRadius: BorderRadius.circular(2),
+          border: Border.all(color: _muted, width: 0.5),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+            color: _accent,
+            fontSize: 10,
+            letterSpacing: 2,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildEditor() {
     return Column(
       children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildToolbarButton('RESET', _showResetDialog),
+              const SizedBox(width: 12),
+              _buildToolbarButton('LOGS', _vm.printLogs),
+            ],
+          ),
+        ),
         Expanded(
           child: Stack(
             alignment: Alignment.center,
@@ -227,7 +303,6 @@ class _EditorScreenState extends State<EditorScreen> {
                     strokeWidth: 1,
                   ),
                 ),
-
             ],
           ),
         ),
