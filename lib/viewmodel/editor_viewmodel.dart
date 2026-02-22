@@ -5,8 +5,9 @@ import '../model/color_edit.dart';
 import '../model/color_grading_edit.dart';
 import '../model/photo_editing_image.dart';
 import '../domain/apply_edits.dart';
+import '../model/chat_message.dart';
 
-enum EditorMode { basic, selectiveColor, colorGrading }
+enum EditorMode { basic, selectiveColor, colorGrading, askAi }
 
 class EditorViewModel extends ChangeNotifier {
   PhotoEditingImage? _photoEditingImage;
@@ -16,6 +17,7 @@ class EditorViewModel extends ChangeNotifier {
   ColorRange _selectedColorRange = ColorRange.red;
   EditorMode _editorMode = EditorMode.basic;
   ColorGradingZone _selectedGradingZone = ColorGradingZone.shadows;
+  final List<ChatMessage> _messages = [];
 
   bool get hasImage => _photoEditingImage != null;
   PhotoEditingImage? getModel() => _photoEditingImage;
@@ -25,6 +27,7 @@ class EditorViewModel extends ChangeNotifier {
   ColorRange get selectedColorRange => _selectedColorRange;
   EditorMode get editorMode => _editorMode;
   ColorGradingZone get selectedGradingZone => _selectedGradingZone;
+  List<ChatMessage> get messages => List.unmodifiable(_messages);
 
   double getEditValue(OperationType type) {
     return _photoEditingImage?.getValue(type) ?? 0.0;
@@ -186,6 +189,18 @@ class EditorViewModel extends ChangeNotifier {
 
     _processedImage = result;
     _isProcessing = false;
+    notifyListeners();
+  }
+
+  void sendMessage(String text) {
+    if (text.trim().isEmpty) return;
+    _messages.add(ChatMessage(text: text, isUser: true));
+    _messages.add(ChatMessage(text: text, isUser: false));
+    notifyListeners();
+  }
+
+  void clearChat() {
+    _messages.clear();
     notifyListeners();
   }
 }

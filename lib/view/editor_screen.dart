@@ -15,6 +15,7 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   final EditorViewModel _vm = EditorViewModel();
   final ImagePicker _picker = ImagePicker();
+  final TextEditingController _chatController = TextEditingController();
 
   static const _bg = Color(0xFF111111);
   static const _surface = Color(0xFF1E1E1E);
@@ -49,6 +50,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    _chatController.dispose();
     _vm.dispose();
     super.dispose();
   }
@@ -181,6 +183,29 @@ class _EditorScreenState extends State<EditorScreen> {
                 ),
               ],
             ),
+
+            const Divider(color: _muted, height: 1),
+
+            // Ask AI
+            ListTile(
+              leading: Icon(
+                Icons.auto_awesome,
+                color: _vm.editorMode == EditorMode.askAi ? _highlight : _accent,
+                size: 20,
+              ),
+              title: Text(
+                'ASK AI',
+                style: TextStyle(
+                  color: _vm.editorMode == EditorMode.askAi ? _highlight : _accent,
+                  fontSize: 11,
+                  letterSpacing: 2,
+                ),
+              ),
+              onTap: () {
+                _vm.setEditorMode(EditorMode.askAi);
+                Navigator.of(context).pop();
+              },
+            ),
           ],
         ),
       ),
@@ -307,23 +332,26 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
         ),
 
-        Container(
-          color: _surface,
-          child: Column(
-            children: [
-              _vm.editorMode == EditorMode.basic
-                  ? _buildSlider()
-                  : _vm.editorMode == EditorMode.selectiveColor
-                      ? _buildColorSliders()
-                      : _buildGradingSliders(),
-              _vm.editorMode == EditorMode.basic
-                  ? _buildOperationBar()
-                  : _vm.editorMode == EditorMode.selectiveColor
-                      ? _buildColorBar()
-                      : _buildGradingBar(),
-            ],
+        if (_vm.editorMode == EditorMode.askAi)
+          Expanded(child: _buildChat())
+        else
+          Container(
+            color: _surface,
+            child: Column(
+              children: [
+                _vm.editorMode == EditorMode.basic
+                    ? _buildSlider()
+                    : _vm.editorMode == EditorMode.selectiveColor
+                        ? _buildColorSliders()
+                        : _buildGradingSliders(),
+                _vm.editorMode == EditorMode.basic
+                    ? _buildOperationBar()
+                    : _vm.editorMode == EditorMode.selectiveColor
+                        ? _buildColorBar()
+                        : _buildGradingBar(),
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -675,6 +703,105 @@ class _EditorScreenState extends State<EditorScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildChat() {
+    final messages = _vm.messages;
+
+    return Container(
+      color: _surface,
+      child: Column(
+        children: [
+          Expanded(
+            child: messages.isEmpty
+                ? const Center(
+                    child: Text(
+                      'ASK AI ANYTHING',
+                      style: TextStyle(
+                        color: _muted,
+                        fontSize: 11,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final msg = messages[index];
+                      return Align(
+                        alignment: msg.isUser
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.7,
+                          ),
+                          decoration: BoxDecoration(
+                            color: msg.isUser
+                                ? _highlight.withValues(alpha: 0.15)
+                                : _bg,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: msg.isUser ? _highlight.withValues(alpha: 0.3) : _muted,
+                              width: 0.5,
+                            ),
+                          ),
+                          child: Text(
+                            msg.text,
+                            style: TextStyle(
+                              color: msg.isUser ? _highlight : _accent,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: _muted, width: 0.5)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _chatController,
+                    style: const TextStyle(color: _highlight, fontSize: 13),
+                    decoration: const InputDecoration(
+                      hintText: 'Type a message...',
+                      hintStyle: TextStyle(color: _muted, fontSize: 13),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    onSubmitted: (_) => _sendChat(),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.send, color: _accent, size: 20),
+                  onPressed: _sendChat,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sendChat() {
+    final text = _chatController.text;
+    if (text.trim().isEmpty) return;
+    _chatController.clear();
+    _vm.sendMessage(text);
   }
 
   Widget _buildColorBar() {
