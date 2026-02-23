@@ -797,11 +797,20 @@ class _EditorScreenState extends State<EditorScreen> {
     );
   }
 
-  void _sendChat() {
+  Future<void> _sendChat() async {
     final text = _chatController.text;
     if (text.trim().isEmpty) return;
     _chatController.clear();
-    _vm.sendMessage(text);
+    final error = await _vm.sendMessage(text);
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error, style: const TextStyle(color: Colors.white)),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Widget _buildColorBar() {

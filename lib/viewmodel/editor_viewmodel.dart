@@ -5,6 +5,7 @@ import '../model/color_edit.dart';
 import '../model/color_grading_edit.dart';
 import '../model/photo_editing_image.dart';
 import '../domain/apply_edits.dart';
+import '../domain/parse_edits_json.dart';
 import '../model/chat_message.dart';
 
 enum EditorMode { basic, selectiveColor, colorGrading, askAi }
@@ -192,11 +193,39 @@ class EditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void sendMessage(String text) {
-    if (text.trim().isEmpty) return;
+  Future<String?> sendMessage(String text) async {
+    if (text.trim().isEmpty) return null;
     _messages.add(ChatMessage(text: text, isUser: true));
-    _messages.add(ChatMessage(text: text, isUser: false));
+
+    // AI reply (currently echo, later real LLM)
+    final aiReply = text;
+    _messages.add(ChatMessage(text: aiReply, isUser: false));
     notifyListeners();
+
+    // Parse and apply
+    if (_photoEditingImage == null) return 'No image loaded';
+
+    final result = parseEditsJson(aiReply);
+    if (result.error != null) return result.error;
+
+    final parsed = result.edits!;
+    for (final edit in parsed.edits) {
+      _photoEditingImage!.addOrUpdateEdit(edit);
+    }
+    for (final colorEdit in parsed.colorEdits) {
+      _photoEditingImage!.addOrUpdateColorEdit(colorEdit);
+    }
+    for (final gradingEdit in parsed.colorGradingEdits) {
+      _photoEditingImage!.addOrUpdateColorGradingEdit(gradingEdit);
+    }
+
+    _isProcessing = true;
+    notifyListeners();
+
+    _processedImage = await _processAllEdits();
+    _isProcessing = false;
+    notifyListeners();
+    return null;
   }
 
   void clearChat() {
