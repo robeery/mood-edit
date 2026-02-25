@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
@@ -46,20 +47,29 @@ RULES:
 
   String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 
-  Future<String> sendPrompt(String userMessage) async {
+  Future<String> sendPrompt(String userMessage, {Uint8List? imageBytes}) async {
     if (_apiKey.isEmpty || _apiKey == 'your_key_here') {
       throw Exception('GEMINI_API_KEY not configured in .env');
     }
 
     final url = Uri.parse('$_baseUrl/$_model:generateContent?key=$_apiKey');
 
+    final parts = <Map<String, dynamic>>[
+      {'text': userMessage},
+    ];
+
+    if (imageBytes != null) {
+      parts.insert(0, {
+        'inline_data': {
+          'mime_type': 'image/jpeg',
+          'data': base64Encode(imageBytes),
+        },
+      });
+    }
+
     final body = jsonEncode({
       'contents': [
-        {
-          'parts': [
-            {'text': userMessage},
-          ],
-        },
+        {'parts': parts},
       ],
       'systemInstruction': {
         'parts': [

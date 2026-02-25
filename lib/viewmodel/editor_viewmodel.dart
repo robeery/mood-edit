@@ -205,7 +205,7 @@ class EditorViewModel extends ChangeNotifier {
     // Call Gemini API
     final String aiReply;
     try {
-      aiReply = await _geminiService.sendPrompt(text);
+      aiReply = await _geminiService.sendPrompt(text, imageBytes: _processedImage);
     } catch (e) {
       return e.toString();
     }
