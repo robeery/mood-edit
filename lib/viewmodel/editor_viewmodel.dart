@@ -24,6 +24,13 @@ class EditorViewModel extends ChangeNotifier {
   final GeminiService _geminiService = GeminiService();
   ParsedEdits? _pendingEdits;
   Uint8List? _snapshotProcessedImage;
+  String _selectedModel = 'gemini-2.5-flash-lite';
+
+  static const List<String> availableModels = [
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
+    'gemini-2.5-pro',
+  ];
 
   bool get hasImage => _photoEditingImage != null;
   PhotoEditingImage? getModel() => _photoEditingImage;
@@ -36,6 +43,12 @@ class EditorViewModel extends ChangeNotifier {
   ColorGradingZone get selectedGradingZone => _selectedGradingZone;
   List<ChatMessage> get messages => List.unmodifiable(_messages);
   bool get hasPendingEdits => _pendingEdits != null;
+  String get selectedModel => _selectedModel;
+
+  void setSelectedModel(String model) {
+    _selectedModel = model;
+    notifyListeners();
+  }
 
   double getEditValue(OperationType type) {
     return _photoEditingImage?.getValue(type) ?? 0.0;
@@ -218,7 +231,7 @@ class EditorViewModel extends ChangeNotifier {
 
     final String aiReply;
     try {
-      aiReply = await _geminiService.sendPrompt(text, imageBytes: _processedImage);
+      aiReply = await _geminiService.sendPrompt(text, imageBytes: _processedImage, model: _selectedModel);
     } catch (e) {
       _isWaitingForAi = false;
       notifyListeners();
@@ -254,12 +267,11 @@ class EditorViewModel extends ChangeNotifier {
       model.addOrUpdateColorGradingEdit(gradingEdit);
     }
 
-    _pendingEdits = parsed;
-
     _isProcessing = true;
     notifyListeners();
 
     _processedImage = await _processAllEdits();
+    _pendingEdits = parsed;
     _isProcessing = false;
     notifyListeners();
     return null;

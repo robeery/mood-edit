@@ -4,9 +4,6 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class GeminiService {
-  // static const _model = 'gemini-2.5-flash';
-  // static const _model = 'gemini-2.5-pro';
-  static const _model = 'gemini-2.5-flash-lite';
   static const _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -51,12 +48,12 @@ RULES:
 
   String get _apiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
 
-  Future<String> sendPrompt(String userMessage, {Uint8List? imageBytes}) async {
+  Future<String> sendPrompt(String userMessage, {Uint8List? imageBytes, String model = 'gemini-2.5-flash-lite'}) async {
     if (_apiKey.isEmpty || _apiKey == 'your_key_here') {
       throw Exception('GEMINI_API_KEY not configured in .env');
     }
 
-    final url = Uri.parse('$_baseUrl/$_model:generateContent?key=$_apiKey');
+    final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
     final parts = <Map<String, dynamic>>[
       {'text': userMessage},

@@ -852,25 +852,55 @@ class _EditorScreenState extends State<EditorScreen> {
             decoration: const BoxDecoration(
               border: Border(top: BorderSide(color: _muted, width: 0.5)),
             ),
-            child: Row(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _chatController,
-                    style: const TextStyle(color: _highlight, fontSize: 13),
-                    decoration: const InputDecoration(
-                      hintText: 'Type a message...',
-                      hintStyle: TextStyle(color: _muted, fontSize: 13),
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                Row(
+                  children: [
+                    const Text(
+                      'MODEL ',
+                      style: TextStyle(color: _muted, fontSize: 9, letterSpacing: 2),
                     ),
-                    onSubmitted: (_) => _sendChat(),
-                  ),
+                    DropdownButton<String>(
+                      value: _vm.selectedModel,
+                      dropdownColor: _surface,
+                      style: const TextStyle(color: _accent, fontSize: 11),
+                      underline: const SizedBox.shrink(),
+                      isDense: true,
+                      icon: const Icon(Icons.arrow_drop_down, color: _muted, size: 16),
+                      items: EditorViewModel.availableModels.map((model) {
+                        return DropdownMenuItem(
+                          value: model,
+                          child: Text(model, style: const TextStyle(fontSize: 11)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) _vm.setSelectedModel(value);
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send, color: _accent, size: 20),
-                  onPressed: _sendChat,
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _chatController,
+                        style: const TextStyle(color: _highlight, fontSize: 13),
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message...',
+                          hintStyle: TextStyle(color: _muted, fontSize: 13),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onSubmitted: (_) => _sendChat(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send, color: _accent, size: 20),
+                      onPressed: _sendChat,
+                    ),
+                  ],
                 ),
               ],
             ),
