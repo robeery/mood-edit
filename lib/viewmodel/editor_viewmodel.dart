@@ -7,6 +7,7 @@ import '../model/photo_editing_image.dart';
 import '../domain/apply_edits.dart';
 import '../domain/parse_edits_json.dart';
 import '../model/chat_message.dart';
+import '../services/gemini_service.dart';
 
 enum EditorMode { basic, selectiveColor, colorGrading, askAi }
 
@@ -19,6 +20,7 @@ class EditorViewModel extends ChangeNotifier {
   EditorMode _editorMode = EditorMode.basic;
   ColorGradingZone _selectedGradingZone = ColorGradingZone.shadows;
   final List<ChatMessage> _messages = [];
+  final GeminiService _geminiService = GeminiService();
 
   bool get hasImage => _photoEditingImage != null;
   PhotoEditingImage? getModel() => _photoEditingImage;
@@ -195,16 +197,23 @@ class EditorViewModel extends ChangeNotifier {
 
   Future<String?> sendMessage(String text) async {
     if (text.trim().isEmpty) return null;
-    _messages.add(ChatMessage(text: text, isUser: true));
+    if (_photoEditingImage == null) return 'No image loaded';
 
-    // AI reply (currently echo, later real LLM)
-    final aiReply = text;
+    _messages.add(ChatMessage(text: text, isUser: true));
+    notifyListeners();
+
+    // Call Gemini API
+    final String aiReply;
+    try {
+      aiReply = await _geminiService.sendPrompt(text);
+    } catch (e) {
+      return e.toString();
+    }
+
     _messages.add(ChatMessage(text: aiReply, isUser: false));
     notifyListeners();
 
     // Parse and apply
-    if (_photoEditingImage == null) return 'No image loaded';
-
     final result = parseEditsJson(aiReply);
     if (result.error != null) return result.error;
 
