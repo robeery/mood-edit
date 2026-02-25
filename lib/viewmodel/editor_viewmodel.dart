@@ -22,6 +22,8 @@ class EditorViewModel extends ChangeNotifier {
   ColorGradingZone _selectedGradingZone = ColorGradingZone.shadows;
   final List<ChatMessage> _messages = [];
   final GeminiService _geminiService = GeminiService();
+  ParsedEdits? _pendingEdits;
+  Uint8List? _snapshotProcessedImage;
 
   bool get hasImage => _photoEditingImage != null;
   PhotoEditingImage? getModel() => _photoEditingImage;
@@ -33,6 +35,7 @@ class EditorViewModel extends ChangeNotifier {
   EditorMode get editorMode => _editorMode;
   ColorGradingZone get selectedGradingZone => _selectedGradingZone;
   List<ChatMessage> get messages => List.unmodifiable(_messages);
+  bool get hasPendingEdits => _pendingEdits != null;
 
   double getEditValue(OperationType type) {
     return _photoEditingImage?.getValue(type) ?? 0.0;
@@ -201,6 +204,11 @@ class EditorViewModel extends ChangeNotifier {
     if (text.trim().isEmpty) return null;
     if (_photoEditingImage == null) return 'No image loaded';
 
+    // Discard any pending edits from a previous AI response
+    if (_pendingEdits != null) {
+      await _revertPendingEdits();
+    }
+
     _messages.add(ChatMessage(text: text, isUser: true));
     notifyListeners();
 
@@ -219,7 +227,7 @@ class EditorViewModel extends ChangeNotifier {
 
     _isWaitingForAi = false;
 
-    // Parse and apply
+    // Parse
     final result = parseEditsJson(aiReply);
     if (result.error != null) {
       _messages.add(ChatMessage(text: aiReply, isUser: false));
@@ -229,16 +237,24 @@ class EditorViewModel extends ChangeNotifier {
 
     final parsed = result.edits!;
     _messages.add(ChatMessage(text: parsed.message ?? 'Edits applied.', isUser: false));
-    notifyListeners();
+
+    // Snapshot current state before applying preview
+    final model = _photoEditingImage!;
+    model.saveSnapshot();
+    _snapshotProcessedImage = _processedImage;
+
+    // Apply edits as preview
     for (final edit in parsed.edits) {
-      _photoEditingImage!.addOrUpdateEdit(edit);
+      model.addOrUpdateEdit(edit);
     }
     for (final colorEdit in parsed.colorEdits) {
-      _photoEditingImage!.addOrUpdateColorEdit(colorEdit);
+      model.addOrUpdateColorEdit(colorEdit);
     }
     for (final gradingEdit in parsed.colorGradingEdits) {
-      _photoEditingImage!.addOrUpdateColorGradingEdit(gradingEdit);
+      model.addOrUpdateColorGradingEdit(gradingEdit);
     }
+
+    _pendingEdits = parsed;
 
     _isProcessing = true;
     notifyListeners();
@@ -247,6 +263,32 @@ class EditorViewModel extends ChangeNotifier {
     _isProcessing = false;
     notifyListeners();
     return null;
+  }
+
+  void applyPendingEdits() {
+    _pendingEdits = null;
+    _photoEditingImage?.clearSnapshot();
+    _snapshotProcessedImage = null;
+    notifyListeners();
+  }
+
+  Future<void> discardPendingEdits() async {
+    if (_pendingEdits == null) return;
+    await _revertPendingEdits();
+    notifyListeners();
+  }
+
+  Future<void> _revertPendingEdits() async {
+    _photoEditingImage!.revertSnapshot();
+    _pendingEdits = null;
+
+    if (_snapshotProcessedImage != null) {
+      _processedImage = _snapshotProcessedImage;
+    } else {
+      _processedImage = await _processAllEdits();
+    }
+
+    _snapshotProcessedImage = null;
   }
 
   void clearChat() {

@@ -64,4 +64,34 @@ class PhotoEditingImage {
     colorGradingEdits.removeWhere((e) => e.zone == edit.zone);
     colorGradingEdits.add(edit);
   }
+
+  // Snapshot support for pending AI edits
+  List<Edit> _snapshotEdits = [];
+  List<ColorEdit> _snapshotColorEdits = [];
+  List<ColorGradingEdit> _snapshotGradingEdits = [];
+  bool _hasSnapshot = false;
+
+  bool get hasSnapshot => _hasSnapshot;
+
+  void saveSnapshot() {
+    _snapshotEdits = List.of(edits);
+    _snapshotColorEdits = List.of(colorEdits);
+    _snapshotGradingEdits = List.of(colorGradingEdits);
+    _hasSnapshot = true;
+  }
+
+  void revertSnapshot() {
+    if (!_hasSnapshot) return;
+    edits..clear()..addAll(_snapshotEdits);
+    colorEdits..clear()..addAll(_snapshotColorEdits);
+    colorGradingEdits..clear()..addAll(_snapshotGradingEdits);
+    _hasSnapshot = false;
+  }
+
+  void clearSnapshot() {
+    _snapshotEdits = [];
+    _snapshotColorEdits = [];
+    _snapshotGradingEdits = [];
+    _hasSnapshot = false;
+  }
 }

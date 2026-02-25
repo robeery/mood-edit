@@ -315,6 +315,7 @@ class _EditorScreenState extends State<EditorScreen> {
             ],
           ),
         ),
+        if (_vm.hasPendingEdits) _buildPendingBar(),
         Expanded(
           child: Stack(
             alignment: Alignment.center,
@@ -701,6 +702,66 @@ class _EditorScreenState extends State<EditorScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildPendingBar() {
+    return Container(
+      color: _surface,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          const Text(
+            'APPLY CHANGES?',
+            style: TextStyle(
+              color: _accent,
+              fontSize: 11,
+              letterSpacing: 2,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const Spacer(),
+          GestureDetector(
+            onTap: () => _vm.discardPendingEdits(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                border: Border.all(color: _muted, width: 0.5),
+              ),
+              child: const Text(
+                'DISCARD',
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 10,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _vm.applyPendingEdits(),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: _highlight,
+                borderRadius: BorderRadius.circular(2),
+              ),
+              child: const Text(
+                'APPLY',
+                style: TextStyle(
+                  color: Color(0xFF111111),
+                  fontSize: 10,
+                  letterSpacing: 2,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
