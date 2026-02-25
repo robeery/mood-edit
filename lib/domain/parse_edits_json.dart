@@ -4,11 +4,13 @@ import '../model/color_edit.dart';
 import '../model/color_grading_edit.dart';
 
 class ParsedEdits {
+  final String? message;
   final List<Edit> edits;
   final List<ColorEdit> colorEdits;
   final List<ColorGradingEdit> colorGradingEdits;
 
   const ParsedEdits({
+    this.message,
     this.edits = const [],
     this.colorEdits = const [],
     this.colorGradingEdits = const [],
@@ -35,7 +37,7 @@ ParseResult parseEditsJson(String text) {
     return const ParseResult.failure('Expected a JSON object');
   }
 
-  final allowedKeys = {'edits', 'colorEdits', 'colorGradingEdits'};
+  final allowedKeys = {'message', 'edits', 'colorEdits', 'colorGradingEdits'};
   for (final key in decoded.keys) {
     if (!allowedKeys.contains(key)) {
       return ParseResult.failure('Unknown key: "$key"');
@@ -193,7 +195,10 @@ ParseResult parseEditsJson(String text) {
     }
   }
 
+  final message = decoded['message'];
+
   return ParseResult.success(ParsedEdits(
+    message: message is String ? message : null,
     edits: edits,
     colorEdits: colorEdits,
     colorGradingEdits: gradingEdits,

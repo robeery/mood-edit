@@ -4,7 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class GeminiService {
-  static const _model = 'gemini-2.5-flash';
+  // static const _model = 'gemini-2.5-flash';
+  // static const _model = 'gemini-2.5-pro';
+  static const _model = 'gemini-2.5-flash-lite';
   static const _baseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models';
 
@@ -14,6 +16,7 @@ You must respond with ONLY a valid JSON object matching the schema below. No exp
 
 SCHEMA:
 {
+  "message": "<short friendly description of what you changed and why>",
   "edits": [
     { "type": "<OperationType>", "value": <number> }
   ],
@@ -39,8 +42,9 @@ Color grading zones: shadows, midtones, highlights, global
   - strength: 0 to 100
 
 RULES:
+- The "message" field is REQUIRED. Keep it short (1-2 sentences) explaining what you did.
 - Only include operations with non-zero values.
-- All three top-level arrays are optional — include only the ones needed.
+- All three edit arrays are optional — include only the ones needed.
 - Values must be within the specified ranges.
 - Return ONLY the JSON object, nothing else.
 ''';

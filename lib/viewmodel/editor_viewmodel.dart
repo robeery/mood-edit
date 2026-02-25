@@ -15,6 +15,7 @@ class EditorViewModel extends ChangeNotifier {
   PhotoEditingImage? _photoEditingImage;
   Uint8List? _processedImage;
   bool _isProcessing = false;
+  bool _isWaitingForAi = false;
   OperationType _selectedOperation = OperationType.exposure;
   ColorRange _selectedColorRange = ColorRange.red;
   EditorMode _editorMode = EditorMode.basic;
@@ -26,6 +27,7 @@ class EditorViewModel extends ChangeNotifier {
   PhotoEditingImage? getModel() => _photoEditingImage;
   Uint8List? get processedImage => _processedImage;
   bool get isProcessing => _isProcessing;
+  bool get isWaitingForAi => _isWaitingForAi;
   OperationType get selectedOperation => _selectedOperation;
   ColorRange get selectedColorRange => _selectedColorRange;
   EditorMode get editorMode => _editorMode;
@@ -203,21 +205,31 @@ class EditorViewModel extends ChangeNotifier {
     notifyListeners();
 
     // Call Gemini API
+    _isWaitingForAi = true;
+    notifyListeners();
+
     final String aiReply;
     try {
       aiReply = await _geminiService.sendPrompt(text, imageBytes: _processedImage);
     } catch (e) {
+      _isWaitingForAi = false;
+      notifyListeners();
       return e.toString();
     }
 
-    _messages.add(ChatMessage(text: aiReply, isUser: false));
-    notifyListeners();
+    _isWaitingForAi = false;
 
     // Parse and apply
     final result = parseEditsJson(aiReply);
-    if (result.error != null) return result.error;
+    if (result.error != null) {
+      _messages.add(ChatMessage(text: aiReply, isUser: false));
+      notifyListeners();
+      return result.error;
+    }
 
     final parsed = result.edits!;
+    _messages.add(ChatMessage(text: parsed.message ?? 'Edits applied.', isUser: false));
+    notifyListeners();
     for (final edit in parsed.edits) {
       _photoEditingImage!.addOrUpdateEdit(edit);
     }

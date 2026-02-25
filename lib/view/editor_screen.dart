@@ -320,7 +320,7 @@ class _EditorScreenState extends State<EditorScreen> {
             alignment: Alignment.center,
             children: [
               Image.memory(_vm.processedImage!, fit: BoxFit.contain),
-              if (_vm.isProcessing)
+              if (_vm.isProcessing || _vm.isWaitingForAi)
                 Container(
                   color: Colors.black26,
                   child: const CircularProgressIndicator(
@@ -713,7 +713,7 @@ class _EditorScreenState extends State<EditorScreen> {
       child: Column(
         children: [
           Expanded(
-            child: messages.isEmpty
+            child: messages.isEmpty && !_vm.isWaitingForAi
                 ? const Center(
                     child: Text(
                       'ASK AI ANYTHING',
@@ -726,8 +726,30 @@ class _EditorScreenState extends State<EditorScreen> {
                   )
                 : ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    itemCount: messages.length,
+                    itemCount: messages.length + (_vm.isWaitingForAi ? 1 : 0),
                     itemBuilder: (context, index) {
+                      if (index == messages.length) {
+                        return Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _bg,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: _muted, width: 0.5),
+                            ),
+                            child: const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                color: _accent,
+                                strokeWidth: 1.5,
+                              ),
+                            ),
+                          ),
+                        );
+                      }
                       final msg = messages[index];
                       return Align(
                         alignment: msg.isUser
