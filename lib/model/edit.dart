@@ -47,4 +47,6 @@ class Edit {
 
   
   const Edit({required this.type, required this.value});
+
+  Map<String, dynamic> toJson() => {'type': type.name, 'value': value};
 }

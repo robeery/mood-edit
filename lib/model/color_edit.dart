@@ -39,6 +39,13 @@ class ColorEdit {
       hue.abs() < 0.001 &&
       saturation.abs() < 0.001 &&
       luminance.abs() < 0.001;
+
+  Map<String, dynamic> toJson() => {
+        'range': range.name,
+        'hue': hue,
+        'saturation': saturation,
+        'luminance': luminance,
+      };
       
   //debug purposes
   @override

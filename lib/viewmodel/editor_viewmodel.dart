@@ -1,4 +1,5 @@
 
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../model/edit.dart';
 import '../model/color_edit.dart';
@@ -218,10 +219,16 @@ class EditorViewModel extends ChangeNotifier {
     if (text.trim().isEmpty) return null;
     if (_photoEditingImage == null) return 'No image loaded';
 
-    // Discard any pending edits from a previous AI response
+    // Auto-apply any pending edits before processing new prompt
     if (_pendingEdits != null) {
-      await _revertPendingEdits();
+      applyPendingEdits();
     }
+
+    // Capture history and state BEFORE adding current message
+    final history = _messages.length > 10
+        ? _messages.sublist(_messages.length - 10)
+        : List<ChatMessage>.from(_messages);
+    final stateJson = _buildCurrentStateJson();
 
     _messages.add(ChatMessage(text: text, isUser: true));
     notifyListeners();
@@ -232,7 +239,13 @@ class EditorViewModel extends ChangeNotifier {
 
     final String aiReply;
     try {
-      aiReply = await _geminiService.sendPrompt(text, imageBytes: _processedImage, model: _selectedModel);
+      aiReply = await _geminiService.sendPrompt(
+        text,
+        imageBytes: _processedImage,
+        model: _selectedModel,
+        history: history,
+        currentStateJson: stateJson,
+      );
     } catch (e) {
       _isWaitingForAi = false;
       notifyListeners();
@@ -307,5 +320,14 @@ class EditorViewModel extends ChangeNotifier {
   void clearChat() {
     _messages.clear();
     notifyListeners();
+  }
+
+  String _buildCurrentStateJson() {
+    final model = _photoEditingImage!;
+    return jsonEncode({
+      'edits': model.edits.where((e) => e.value != 0).map((e) => e.toJson()).toList(),
+      'colorEdits': model.colorEdits.where((e) => !e.isEmpty).map((e) => e.toJson()).toList(),
+      'colorGradingEdits': model.colorGradingEdits.where((e) => !e.isEmpty).map((e) => e.toJson()).toList(),
+    });
   }
 }

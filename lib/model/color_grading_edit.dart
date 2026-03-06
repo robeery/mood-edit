@@ -25,6 +25,12 @@ class ColorGradingEdit {
 
   bool get isEmpty => strength.abs() < 0.001;
 
+  Map<String, dynamic> toJson() => {
+        'zone': zone.name,
+        'hue': hue,
+        'strength': strength,
+      };
+
   //debug purposes
   @override
   String toString() =>
