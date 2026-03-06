@@ -35,6 +35,7 @@ class EditorViewModel extends ChangeNotifier {
   bool get hasImage => _photoEditingImage != null;
   PhotoEditingImage? getModel() => _photoEditingImage;
   Uint8List? get processedImage => _processedImage;
+  Uint8List? get originalBytes => _photoEditingImage?.originalBytes;
   bool get isProcessing => _isProcessing;
   bool get isWaitingForAi => _isWaitingForAi;
   OperationType get selectedOperation => _selectedOperation;

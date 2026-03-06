@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../model/edit.dart';
@@ -16,6 +17,8 @@ class _EditorScreenState extends State<EditorScreen> {
   final EditorViewModel _vm = EditorViewModel();
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _chatController = TextEditingController();
+  Timer? _originalViewTimer;
+  bool _showingOriginal = false;
 
   static const _bg = Color(0xFF111111);
   static const _surface = Color(0xFF1E1E1E);
@@ -50,6 +53,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   @override
   void dispose() {
+    _originalViewTimer?.cancel();
     _chatController.dispose();
     _vm.dispose();
     super.dispose();
@@ -317,19 +321,49 @@ class _EditorScreenState extends State<EditorScreen> {
         ),
         if (_vm.hasPendingEdits) _buildPendingBar(),
         Expanded(
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              Image.memory(_vm.processedImage!, fit: BoxFit.contain),
-              if (_vm.isProcessing || _vm.isWaitingForAi)
-                Container(
-                  color: Colors.black26,
-                  child: const CircularProgressIndicator(
-                    color: _highlight,
-                    strokeWidth: 1,
-                  ),
+          child: GestureDetector(
+            onLongPressStart: (_) {
+              _originalViewTimer = Timer(const Duration(milliseconds: 300), () {
+                setState(() => _showingOriginal = true);
+              });
+            },
+            onLongPressEnd: (_) {
+              _originalViewTimer?.cancel();
+              setState(() => _showingOriginal = false);
+            },
+            onLongPressCancel: () {
+              _originalViewTimer?.cancel();
+              setState(() => _showingOriginal = false);
+            },
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Image.memory(
+                  _showingOriginal ? _vm.originalBytes! : _vm.processedImage!,
+                  fit: BoxFit.contain,
                 ),
-            ],
+                if (_showingOriginal)
+                  Positioned(
+                    bottom: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      color: Colors.black54,
+                      child: const Text(
+                        'ORIGINAL',
+                        style: TextStyle(color: _accent, fontSize: 10, letterSpacing: 2),
+                      ),
+                    ),
+                  ),
+                if (_vm.isProcessing || _vm.isWaitingForAi)
+                  Container(
+                    color: Colors.black26,
+                    child: const CircularProgressIndicator(
+                      color: _highlight,
+                      strokeWidth: 1,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
 
