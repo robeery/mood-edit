@@ -5,6 +5,7 @@ import '../model/edit.dart';
 import '../model/color_edit.dart';
 import '../model/color_grading_edit.dart';
 import '../viewmodel/editor_viewmodel.dart';
+import '../theme/app_theme.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key});
@@ -20,23 +21,6 @@ class _EditorScreenState extends State<EditorScreen> {
   Timer? _originalViewTimer;
   bool _showingOriginal = false;
 
-  static const _bg = Color(0xFF111111);
-  static const _surface = Color(0xFF1E1E1E);
-  static const _accent = Color(0xFFE0E0E0);
-  static const _muted = Color(0xFF555555);
-  static const _highlight = Color(0xFFFFFFFF);
-
-  
-  static const Map<ColorRange, Color> _colorRangeColors = {
-    ColorRange.red:     Color(0xFFFF3B30),
-    ColorRange.orange:  Color(0xFFFF9500),
-    ColorRange.yellow:  Color(0xFFFFCC00),
-    ColorRange.green:   Color(0xFF34C759),
-    ColorRange.cyan:    Color(0xFF5AC8FA),
-    ColorRange.blue:    Color(0xFF007AFF),
-    ColorRange.purple:  Color(0xFFAF52DE),
-    ColorRange.magenta: Color(0xFFFF2D55),
-  };
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -65,15 +49,15 @@ class _EditorScreenState extends State<EditorScreen> {
       listenable: _vm,
       builder: (context, _) {
         return Scaffold(
-          backgroundColor: _bg,
+          backgroundColor: AppColors.bg,
           endDrawer: _buildDrawer(),
           appBar: AppBar(
-            backgroundColor: _bg,
+            backgroundColor: AppColors.bg,
             elevation: 0,
             title: const Text(
               'EDIT',
               style: TextStyle(
-                color: _highlight,
+                color: AppColors.highlight,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 4,
@@ -83,7 +67,7 @@ class _EditorScreenState extends State<EditorScreen> {
             actions: [
               Builder(
                 builder: (ctx) => IconButton(
-                  icon: const Icon(Icons.menu, color: _accent),
+                  icon: const Icon(Icons.menu, color: AppColors.accent),
                   onPressed: () => Scaffold.of(ctx).openEndDrawer(),
                 ),
               ),
@@ -105,17 +89,17 @@ class _EditorScreenState extends State<EditorScreen> {
           width: 160,
           height: 160,
           decoration: BoxDecoration(
-            border: Border.all(color: _muted, width: 1),
+            border: Border.all(color: AppColors.muted, width: 1),
             borderRadius: BorderRadius.circular(4),
           ),
           child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.add, color: _muted, size: 32),
+              Icon(Icons.add, color: AppColors.muted, size: 32),
               SizedBox(height: 8),
               Text(
                 'Pick Image',
-                style: TextStyle(color: _muted, fontSize: 12, letterSpacing: 2),
+                style: TextStyle(color: AppColors.muted, fontSize: 12, letterSpacing: 2),
               ),
             ],
           ),
@@ -126,7 +110,7 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Widget _buildDrawer() {
     return Drawer(
-      backgroundColor: _surface,
+      backgroundColor: AppColors.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -136,21 +120,21 @@ class _EditorScreenState extends State<EditorScreen> {
               child: Text(
                 'MENU',
                 style: const TextStyle(
-                  color: _highlight,
+                  color: AppColors.highlight,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 4,
                 ),
               ),
             ),
-            const Divider(color: _muted, height: 1),
+            const Divider(color: AppColors.muted, height: 1),
 
             // Open new picture
             ListTile(
-              leading: const Icon(Icons.photo_library_outlined, color: _accent, size: 20),
+              leading: const Icon(Icons.photo_library_outlined, color: AppColors.accent, size: 20),
               title: const Text(
                 'OPEN NEW PICTURE',
-                style: TextStyle(color: _accent, fontSize: 11, letterSpacing: 2),
+                style: TextStyle(color: AppColors.accent, fontSize: 11, letterSpacing: 2),
               ),
               onTap: () {
                 Navigator.of(context).pop();
@@ -158,16 +142,16 @@ class _EditorScreenState extends State<EditorScreen> {
               },
             ),
 
-            const Divider(color: _muted, height: 1),
+            const Divider(color: AppColors.muted, height: 1),
 
             // Operations dropdown
             ExpansionTile(
-              iconColor: _accent,
-              collapsedIconColor: _muted,
+              iconColor: AppColors.accent,
+              collapsedIconColor: AppColors.muted,
               tilePadding: const EdgeInsets.symmetric(horizontal: 16),
               title: Text(
                 'OPERATIONS',
-                style: const TextStyle(color: _accent, fontSize: 11, letterSpacing: 2),
+                style: const TextStyle(color: AppColors.accent, fontSize: 11, letterSpacing: 2),
               ),
               children: [
                 _buildDrawerModeTile(
@@ -188,19 +172,19 @@ class _EditorScreenState extends State<EditorScreen> {
               ],
             ),
 
-            const Divider(color: _muted, height: 1),
+            const Divider(color: AppColors.muted, height: 1),
 
             // Ask AI
             ListTile(
               leading: Icon(
                 Icons.auto_awesome,
-                color: _vm.editorMode == EditorMode.askAi ? _highlight : _accent,
+                color: _vm.editorMode == EditorMode.askAi ? AppColors.highlight : AppColors.accent,
                 size: 20,
               ),
               title: Text(
                 'ASK AI',
                 style: TextStyle(
-                  color: _vm.editorMode == EditorMode.askAi ? _highlight : _accent,
+                  color: _vm.editorMode == EditorMode.askAi ? AppColors.highlight : AppColors.accent,
                   fontSize: 11,
                   letterSpacing: 2,
                 ),
@@ -224,11 +208,11 @@ class _EditorScreenState extends State<EditorScreen> {
     final isActive = _vm.editorMode == mode;
     return ListTile(
       contentPadding: const EdgeInsets.only(left: 32, right: 16),
-      leading: Icon(icon, color: isActive ? _highlight : _muted, size: 18),
+      leading: Icon(icon, color: isActive ? AppColors.highlight : AppColors.muted, size: 18),
       title: Text(
         label,
         style: TextStyle(
-          color: isActive ? _highlight : _muted,
+          color: isActive ? AppColors.highlight : AppColors.muted,
           fontSize: 11,
           letterSpacing: 2,
         ),
@@ -244,12 +228,12 @@ class _EditorScreenState extends State<EditorScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _surface,
+        backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
         title: const Text(
           'RESET',
           style: TextStyle(
-            color: _highlight,
+            color: AppColors.highlight,
             fontSize: 13,
             fontWeight: FontWeight.w600,
             letterSpacing: 4,
@@ -257,14 +241,14 @@ class _EditorScreenState extends State<EditorScreen> {
         ),
         content: const Text(
           'Are you sure you want to start over? This will reset your progress.',
-          style: TextStyle(color: _accent, fontSize: 13),
+          style: TextStyle(color: AppColors.accent, fontSize: 13),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text(
               'NO',
-              style: TextStyle(color: _muted, fontSize: 11, letterSpacing: 2),
+              style: TextStyle(color: AppColors.muted, fontSize: 11, letterSpacing: 2),
             ),
           ),
           TextButton(
@@ -274,7 +258,7 @@ class _EditorScreenState extends State<EditorScreen> {
             },
             child: const Text(
               'YES',
-              style: TextStyle(color: _highlight, fontSize: 11, letterSpacing: 2),
+              style: TextStyle(color: AppColors.highlight, fontSize: 11, letterSpacing: 2),
             ),
           ),
         ],
@@ -288,14 +272,14 @@ class _EditorScreenState extends State<EditorScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-          color: _surface,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(2),
-          border: Border.all(color: _muted, width: 0.5),
+          border: Border.all(color: AppColors.muted, width: 0.5),
         ),
         child: Text(
           label,
           style: const TextStyle(
-            color: _accent,
+            color: AppColors.accent,
             fontSize: 10,
             letterSpacing: 2,
             fontWeight: FontWeight.w600,
@@ -350,7 +334,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       color: Colors.black54,
                       child: const Text(
                         'ORIGINAL',
-                        style: TextStyle(color: _accent, fontSize: 10, letterSpacing: 2),
+                        style: TextStyle(color: AppColors.accent, fontSize: 10, letterSpacing: 2),
                       ),
                     ),
                   ),
@@ -358,7 +342,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   Container(
                     color: Colors.black26,
                     child: const CircularProgressIndicator(
-                      color: _highlight,
+                      color: AppColors.highlight,
                       strokeWidth: 1,
                     ),
                   ),
@@ -371,7 +355,7 @@ class _EditorScreenState extends State<EditorScreen> {
           Expanded(child: _buildChat())
         else
           Container(
-            color: _surface,
+            color: AppColors.surface,
             child: Column(
               children: [
                 _vm.editorMode == EditorMode.basic
@@ -406,7 +390,7 @@ class _EditorScreenState extends State<EditorScreen> {
               Text(
                 _vm.selectedOperation.name.toUpperCase(),
                 style: const TextStyle(
-                  color: _accent,
+                  color: AppColors.accent,
                   fontSize: 11,
                   letterSpacing: 3,
                   fontWeight: FontWeight.w500,
@@ -415,7 +399,7 @@ class _EditorScreenState extends State<EditorScreen> {
               Text(
                 currentValue.toStringAsFixed(0),
                 style: const TextStyle(
-                  color: _highlight,
+                  color: AppColors.highlight,
                   fontSize: 13,
                   fontWeight: FontWeight.w300,
                   letterSpacing: 1,
@@ -425,15 +409,7 @@ class _EditorScreenState extends State<EditorScreen> {
           ),
           const SizedBox(height: 8),
           SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 1,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
-              activeTrackColor: _highlight,
-              inactiveTrackColor: _muted,
-              thumbColor: _highlight,
-              overlayColor: Colors.white12,
-            ),
+            data: AppSliderTheme.of(context),
             child: Slider(
               min: _vm.selectedOperation.minValue,
               max: _vm.selectedOperation.maxValue,
@@ -454,13 +430,13 @@ class _EditorScreenState extends State<EditorScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: _vm.selectedOperation.minValue == 0
                   ? [
-                      Text('0', style: TextStyle(color: _muted, fontSize: 10)),
-                      Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
+                      Text('0', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                      Text('+100', style: TextStyle(color: AppColors.muted, fontSize: 10)),
                     ]
                   : [
-                      Text('-100', style: TextStyle(color: _muted, fontSize: 10)),
-                      Text('0', style: TextStyle(color: _muted, fontSize: 10)),
-                      Text('+100', style: TextStyle(color: _muted, fontSize: 10)),
+                      Text('-100', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                      Text('0', style: TextStyle(color: AppColors.muted, fontSize: 10)),
+                      Text('+100', style: TextStyle(color: AppColors.muted, fontSize: 10)),
                     ],
             ),
           ),
@@ -488,10 +464,10 @@ class _EditorScreenState extends State<EditorScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? _highlight : Colors.transparent,
+                color: isSelected ? AppColors.highlight : Colors.transparent,
                 borderRadius: BorderRadius.circular(2),
                 border: Border.all(
-                  color: isSelected ? _highlight : _muted,
+                  color: isSelected ? AppColors.highlight : AppColors.muted,
                   width: 1,
                 ),
               ),
@@ -500,7 +476,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   Text(
                     operation.name.toUpperCase(),
                     style: TextStyle(
-                      color: isSelected ? _bg : _muted,
+                      color: isSelected ? AppColors.bg : AppColors.muted,
                       fontSize: 11,
                       letterSpacing: 2,
                       fontWeight: FontWeight.w600,
@@ -512,7 +488,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       width: 4,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: isSelected ? _bg : _accent,
+                        color: isSelected ? AppColors.bg : AppColors.accent,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -565,20 +541,12 @@ class _EditorScreenState extends State<EditorScreen> {
         width: 32,
         child: Text(
           label,
-          style: const TextStyle(color: _muted, fontSize: 10, letterSpacing: 2),
+          style: const TextStyle(color: AppColors.muted, fontSize: 10, letterSpacing: 2),
         ),
       ),
       Expanded(
         child: SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            trackHeight: 1,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
-            activeTrackColor: _highlight,
-            inactiveTrackColor: _muted,
-            thumbColor: _highlight,
-            overlayColor: Colors.white12,
-          ),
+          data: AppSliderTheme.of(context),
           child: Slider(
             min: -100,
             max: 100,
@@ -594,7 +562,7 @@ class _EditorScreenState extends State<EditorScreen> {
           value.toStringAsFixed(0),
           textAlign: TextAlign.right,
           style: const TextStyle(
-            color: _highlight,
+            color: AppColors.highlight,
             fontSize: 11,
             fontWeight: FontWeight.w300,
           ),
@@ -644,20 +612,12 @@ class _EditorScreenState extends State<EditorScreen> {
           width: 32,
           child: Text(
             label,
-            style: const TextStyle(color: _muted, fontSize: 10, letterSpacing: 2),
+            style: const TextStyle(color: AppColors.muted, fontSize: 10, letterSpacing: 2),
           ),
         ),
         Expanded(
           child: SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              trackHeight: 1,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 4),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
-              activeTrackColor: _highlight,
-              inactiveTrackColor: _muted,
-              thumbColor: _highlight,
-              overlayColor: Colors.white12,
-            ),
+            data: AppSliderTheme.of(context),
             child: Slider(
               min: min,
               max: max,
@@ -673,7 +633,7 @@ class _EditorScreenState extends State<EditorScreen> {
             display,
             textAlign: TextAlign.right,
             style: const TextStyle(
-              color: _highlight,
+              color: AppColors.highlight,
               fontSize: 11,
               fontWeight: FontWeight.w300,
             ),
@@ -702,10 +662,10 @@ class _EditorScreenState extends State<EditorScreen> {
               margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? _highlight : Colors.transparent,
+                color: isSelected ? AppColors.highlight : Colors.transparent,
                 borderRadius: BorderRadius.circular(2),
                 border: Border.all(
-                  color: isSelected ? _highlight : _muted,
+                  color: isSelected ? AppColors.highlight : AppColors.muted,
                   width: 1,
                 ),
               ),
@@ -714,7 +674,7 @@ class _EditorScreenState extends State<EditorScreen> {
                   Text(
                     zone.name.toUpperCase(),
                     style: TextStyle(
-                      color: isSelected ? _bg : _muted,
+                      color: isSelected ? AppColors.bg : AppColors.muted,
                       fontSize: 11,
                       letterSpacing: 2,
                       fontWeight: FontWeight.w600,
@@ -726,7 +686,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       width: 4,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: isSelected ? _bg : _accent,
+                        color: isSelected ? AppColors.bg : AppColors.accent,
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -742,14 +702,14 @@ class _EditorScreenState extends State<EditorScreen> {
 
   Widget _buildPendingBar() {
     return Container(
-      color: _surface,
+      color: AppColors.surface,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
           const Text(
             'APPLY CHANGES?',
             style: TextStyle(
-              color: _accent,
+              color: AppColors.accent,
               fontSize: 11,
               letterSpacing: 2,
               fontWeight: FontWeight.w500,
@@ -762,12 +722,12 @@ class _EditorScreenState extends State<EditorScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
-                border: Border.all(color: _muted, width: 0.5),
+                border: Border.all(color: AppColors.muted, width: 0.5),
               ),
               child: const Text(
                 'DISCARD',
                 style: TextStyle(
-                  color: _muted,
+                  color: AppColors.muted,
                   fontSize: 10,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w600,
@@ -781,13 +741,13 @@ class _EditorScreenState extends State<EditorScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: _highlight,
+                color: AppColors.highlight,
                 borderRadius: BorderRadius.circular(2),
               ),
               child: const Text(
                 'APPLY',
                 style: TextStyle(
-                  color: Color(0xFF111111),
+                  color: AppColors.bg,
                   fontSize: 10,
                   letterSpacing: 2,
                   fontWeight: FontWeight.w600,
@@ -804,7 +764,7 @@ class _EditorScreenState extends State<EditorScreen> {
     final messages = _vm.messages;
 
     return Container(
-      color: _surface,
+      color: AppColors.surface,
       child: Column(
         children: [
           Expanded(
@@ -813,7 +773,7 @@ class _EditorScreenState extends State<EditorScreen> {
                     child: Text(
                       'ASK AI ANYTHING',
                       style: TextStyle(
-                        color: _muted,
+                        color: AppColors.muted,
                         fontSize: 11,
                         letterSpacing: 3,
                       ),
@@ -830,15 +790,15 @@ class _EditorScreenState extends State<EditorScreen> {
                             margin: const EdgeInsets.only(bottom: 8),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
-                              color: _bg,
+                              color: AppColors.bg,
                               borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: _muted, width: 0.5),
+                              border: Border.all(color: AppColors.muted, width: 0.5),
                             ),
                             child: const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                color: _accent,
+                                color: AppColors.accent,
                                 strokeWidth: 1.5,
                               ),
                             ),
@@ -861,18 +821,18 @@ class _EditorScreenState extends State<EditorScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: msg.isUser
-                                ? _highlight.withValues(alpha: 0.15)
-                                : _bg,
+                                ? AppColors.highlight.withValues(alpha: 0.15)
+                                : AppColors.bg,
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                              color: msg.isUser ? _highlight.withValues(alpha: 0.3) : _muted,
+                              color: msg.isUser ? AppColors.highlight.withValues(alpha: 0.3) : AppColors.muted,
                               width: 0.5,
                             ),
                           ),
                           child: Text(
                             msg.text,
                             style: TextStyle(
-                              color: msg.isUser ? _highlight : _accent,
+                              color: msg.isUser ? AppColors.highlight : AppColors.accent,
                               fontSize: 13,
                             ),
                           ),
@@ -884,7 +844,7 @@ class _EditorScreenState extends State<EditorScreen> {
           Container(
             padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
             decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: _muted, width: 0.5)),
+              border: Border(top: BorderSide(color: AppColors.muted, width: 0.5)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -893,15 +853,15 @@ class _EditorScreenState extends State<EditorScreen> {
                   children: [
                     const Text(
                       'MODEL ',
-                      style: TextStyle(color: _muted, fontSize: 9, letterSpacing: 2),
+                      style: TextStyle(color: AppColors.muted, fontSize: 9, letterSpacing: 2),
                     ),
                     DropdownButton<String>(
                       value: _vm.selectedModel,
-                      dropdownColor: _surface,
-                      style: const TextStyle(color: _accent, fontSize: 11),
+                      dropdownColor: AppColors.surface,
+                      style: const TextStyle(color: AppColors.accent, fontSize: 11),
                       underline: const SizedBox.shrink(),
                       isDense: true,
-                      icon: const Icon(Icons.arrow_drop_down, color: _muted, size: 16),
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.muted, size: 16),
                       items: EditorViewModel.availableModels.map((model) {
                         return DropdownMenuItem(
                           value: model,
@@ -919,10 +879,10 @@ class _EditorScreenState extends State<EditorScreen> {
                     Expanded(
                       child: TextField(
                         controller: _chatController,
-                        style: const TextStyle(color: _highlight, fontSize: 13),
+                        style: const TextStyle(color: AppColors.highlight, fontSize: 13),
                         decoration: const InputDecoration(
                           hintText: 'Type a message...',
-                          hintStyle: TextStyle(color: _muted, fontSize: 13),
+                          hintStyle: TextStyle(color: AppColors.muted, fontSize: 13),
                           border: InputBorder.none,
                           isDense: true,
                           contentPadding: EdgeInsets.symmetric(vertical: 8),
@@ -931,7 +891,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.send, color: _accent, size: 20),
+                      icon: const Icon(Icons.send, color: AppColors.accent, size: 20),
                       onPressed: _sendChat,
                     ),
                   ],
@@ -971,7 +931,7 @@ class _EditorScreenState extends State<EditorScreen> {
           final range = ColorRange.values[index];
           final isSelected = range == _vm.selectedColorRange;
           final hasEdit = _vm.hasColorEdit(range);
-          final color = _colorRangeColors[range]!;
+          final color = AppColors.colorRange[range]!;
 
           return GestureDetector(
             onTap: () => _vm.setSelectedColorRange(range),
@@ -987,7 +947,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       color: color,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: isSelected ? _highlight : Colors.transparent,
+                        color: isSelected ? AppColors.highlight : Colors.transparent,
                         width: 2,
                       ),
                     ),
@@ -998,7 +958,7 @@ class _EditorScreenState extends State<EditorScreen> {
                       width: 4,
                       height: 4,
                       decoration: const BoxDecoration(
-                        color: _accent,
+                        color: AppColors.accent,
                         shape: BoxShape.circle,
                       ),
                     ),
