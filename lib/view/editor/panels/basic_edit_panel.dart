@@ -11,6 +11,7 @@ class BasicEditPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisAlignment: MainAxisAlignment.end,
       children: [
         _buildSlider(context),
         _buildOperationBar(),

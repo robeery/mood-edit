@@ -10,6 +10,7 @@ import 'panels/basic_edit_panel.dart';
 import 'panels/color_edit_panel.dart';
 import 'panels/grading_edit_panel.dart';
 import 'panels/chat_panel.dart';
+import 'widgets/mode_tab_bar.dart';
 
 class EditorScreen extends StatefulWidget {
   const EditorScreen({super.key});
@@ -48,7 +49,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, _) {
         return Scaffold(
           backgroundColor: AppColors.bg,
-          endDrawer: EditorDrawer(vm: _vm, onPickImage: _pickImage),
+          endDrawer: EditorDrawer(onPickImage: _pickImage),
           appBar: AppBar(
             backgroundColor: AppColors.bg,
             elevation: 0,
@@ -154,16 +155,24 @@ class _EditorScreenState extends State<EditorScreen> {
             isLoading: _vm.isProcessing || _vm.isWaitingForAi,
           ),
         ),
+        ModeTabBar(
+          currentMode: _vm.editorMode,
+          onModeChanged: _vm.setEditorMode,
+        ),
         if (_vm.editorMode == EditorMode.askAi)
           Expanded(child: ChatPanel(vm: _vm))
         else
-          Container(
-            color: AppColors.surface,
-            child: _vm.editorMode == EditorMode.basic
-                ? BasicEditPanel(vm: _vm)
-                : _vm.editorMode == EditorMode.selectiveColor
-                    ? ColorEditPanel(vm: _vm)
-                    : GradingEditPanel(vm: _vm),
+          //might have to tweak these values later on other devices
+          SizedBox(
+            height: 149,
+            child: Container(
+              color: AppColors.surface,
+              child: _vm.editorMode == EditorMode.basic
+                  ? BasicEditPanel(vm: _vm)
+                  : _vm.editorMode == EditorMode.selectiveColor
+                      ? ColorEditPanel(vm: _vm)
+                      : GradingEditPanel(vm: _vm),
+            ),
           ),
       ],
     );
