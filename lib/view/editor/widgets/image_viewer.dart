@@ -65,12 +65,9 @@ class _ImageViewerState extends State<ImageViewer> {
               ),
             ),
           if (widget.isLoading)
-            Container(
-              color: Colors.black26,
-              child: const CircularProgressIndicator(
-                color: AppColors.highlight,
-                strokeWidth: 1,
-              ),
+            const CircularProgressIndicator(
+              color: AppColors.highlight,
+              strokeWidth: 1,
             ),
         ],
       ),

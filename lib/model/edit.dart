@@ -46,7 +46,8 @@ class Edit {
   
 
   
-  const Edit({required this.type, required this.value});
+  Edit({required this.type, required double value})
+      : value = value.round().toDouble();
 
   Map<String, dynamic> toJson() => {'type': type.name, 'value': value};
 }

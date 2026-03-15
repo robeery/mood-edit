@@ -15,12 +15,14 @@ class ColorEdit {
   final double saturation;
   final double luminance;
 
-  const ColorEdit({
+  ColorEdit({
     required this.range,
-    this.hue = 0,
-    this.saturation = 0,
-    this.luminance = 0,
-  });
+    double hue = 0,
+    double saturation = 0,
+    double luminance = 0,
+  })  : hue = hue.round().toDouble(),
+        saturation = saturation.round().toDouble(),
+        luminance = luminance.round().toDouble();
 
   ColorEdit copyWith({
     double? hue,
