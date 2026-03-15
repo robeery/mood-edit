@@ -143,37 +143,59 @@ class _EditorScreenState extends State<EditorScreen> {
             ],
           ),
         ),
-        if (_vm.hasPendingEdits)
-          PendingEditsBar(
-            onApply: _vm.applyPendingEdits,
-            onDiscard: _vm.discardPendingEdits,
-          ),
         Expanded(
-          child: ImageViewer(
-            imageBytes: _vm.processedImage!,
-            originalBytes: _vm.originalBytes!,
-            isLoading: _vm.isProcessing || _vm.isWaitingForAi,
+          child: ClipRect(
+            child: Stack(
+              children: [
+              Positioned.fill(
+                child: ImageViewer(
+                  imageBytes: _vm.processedImage!,
+                  originalBytes: _vm.originalBytes!,
+                  isLoading: _vm.isProcessing || _vm.isWaitingForAi,
+                ),
+              ),
+              if (_vm.hasPendingEdits)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: PendingEditsBar(
+                    onApply: _vm.applyPendingEdits,
+                    onDiscard: _vm.discardPendingEdits,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         ModeTabBar(
           currentMode: _vm.editorMode,
           onModeChanged: _vm.setEditorMode,
         ),
-        if (_vm.editorMode == EditorMode.askAi)
-          Expanded(child: ChatPanel(vm: _vm))
-        else
-          //might have to tweak these values later on other devices
-          SizedBox(
-            height: 149,
-            child: Container(
-              color: AppColors.surface,
-              child: _vm.editorMode == EditorMode.basic
-                  ? BasicEditPanel(vm: _vm)
-                  : _vm.editorMode == EditorMode.selectiveColor
-                      ? ColorEditPanel(vm: _vm)
-                      : GradingEditPanel(vm: _vm),
-            ),
+        AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          clipBehavior: Clip.hardEdge,
+          child: SizedBox(
+            //might have to tweak these values later on other devices
+            height: _vm.editorMode == EditorMode.askAi
+                ? (MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).viewInsets.bottom) *
+                    0.38
+                : 149,
+            child: _vm.editorMode == EditorMode.askAi
+                ? ChatPanel(vm: _vm)
+                : Container(
+                    color: AppColors.surface,
+                    child: _vm.editorMode == EditorMode.basic
+                        ? BasicEditPanel(vm: _vm)
+                        : _vm.editorMode == EditorMode.selectiveColor
+                            ? ColorEditPanel(vm: _vm)
+                            : GradingEditPanel(vm: _vm),
+                  ),
           ),
+        ),
       ],
     );
   }

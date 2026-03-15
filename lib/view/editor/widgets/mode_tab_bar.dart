@@ -22,9 +22,14 @@ class ModeTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.surface,
       //might have to tweak these values later on other devices
-      padding: const EdgeInsets.only(top: 4, bottom: 0, left: 16, right:16),
+      padding: const EdgeInsets.only(top: 4, bottom: 4, left: 16, right:16),
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          bottom: BorderSide(color: AppColors.highlight, width: 0.5),
+        ),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: _modes.map((m) {
