@@ -74,9 +74,7 @@ Uint8List _applyEdits(Map<String, dynamic> params) {
     }
   }
 
-  for (final colorEdit in colorEdits) {
-    image = color_ops.applyColorEdit(image, colorEdit);
-  }
+  image = color_ops.applyAllColorEdits(image, colorEdits);
 
   image = grading_ops.applyColorGrading(image, colorGradingEdits);
 
