@@ -29,14 +29,17 @@ class ColorEditPanel extends StatelessWidget {
           _buildSliderRow(context, 'HUE', colorEdit.hue,
             (v) => vm.applyColorEdit(colorEdit.copyWith(hue: v)),
             (v) => vm.updateColorEditPreview(colorEdit.copyWith(hue: v)),
+            gradient: hueGradientColors(vm.selectedColorRange),
           ),
           _buildSliderRow(context, 'SAT', colorEdit.saturation,
             (v) => vm.applyColorEdit(colorEdit.copyWith(saturation: v)),
             (v) => vm.updateColorEditPreview(colorEdit.copyWith(saturation: v)),
+            gradient: saturationGradientColors(vm.selectedColorRange),
           ),
           _buildSliderRow(context, 'LUM', colorEdit.luminance,
             (v) => vm.applyColorEdit(colorEdit.copyWith(luminance: v)),
             (v) => vm.updateColorEditPreview(colorEdit.copyWith(luminance: v)),
+            gradient: luminanceGradientColors(vm.selectedColorRange),
           ),
         ],
       ),
@@ -44,7 +47,8 @@ class ColorEditPanel extends StatelessWidget {
   }
 
   Widget _buildSliderRow(BuildContext context, String label, double value,
-      Function(double) onChangeEnd, Function(double) onChanged) {
+      Function(double) onChangeEnd, Function(double) onChanged,
+      {List<Color>? gradient}) {
     return Row(
       children: [
         SizedBox(
@@ -52,16 +56,45 @@ class ColorEditPanel extends StatelessWidget {
           child: Text(label, style: AppTextStyles.mutedSmall),
         ),
         Expanded(
-          child: SliderTheme(
-            data: AppSliderTheme.of(context),
-            child: Slider(
-              min: -100,
-              max: 100,
-              value: value,
-              onChanged: onChanged,
-              onChangeEnd: onChangeEnd,
-            ),
-          ),
+          child: gradient != null
+              ? Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      child: Container(
+                        height: 2,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(1),
+                          gradient: LinearGradient(colors: gradient),
+                        ),
+                      ),
+                    ),
+                    SliderTheme(
+                      data: AppSliderTheme.of(context).copyWith(
+                        activeTrackColor: Colors.transparent,
+                        inactiveTrackColor: Colors.transparent,
+                      ),
+                      child: Slider(
+                        min: -100,
+                        max: 100,
+                        value: value,
+                        onChanged: onChanged,
+                        onChangeEnd: onChangeEnd,
+                      ),
+                    ),
+                  ],
+                )
+              : SliderTheme(
+                  data: AppSliderTheme.of(context),
+                  child: Slider(
+                    min: -100,
+                    max: 100,
+                    value: value,
+                    onChanged: onChanged,
+                    onChangeEnd: onChangeEnd,
+                  ),
+                ),
         ),
         SizedBox(
           width: 32,
