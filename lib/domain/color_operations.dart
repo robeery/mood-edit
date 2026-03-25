@@ -81,6 +81,59 @@ double _hueWeight(double hue, ColorRange range, [double fade = _fadeWidth]) {
   return 0.5 * (1.0 + cos(t * pi));
 }
 
+//RGB-ratio-based color detection for luminance only
+//ratios are stable across JPEG blocks since compression noise barely changes
+//the relative balance between channels, unlike HSL hue which can jump wildly
+double _rgbColorWeight(double r, double g, double b, ColorRange range) {
+  final sum = r + g + b + 0.001;
+  final maxC = max(r, max(g, b));
+  final minC = min(r, min(g, b));
+  final chroma = maxC - minC;
+  final chromaGate = (chroma / 0.08).clamp(0.0, 1.0);
+
+  double w;
+  switch (range) {
+    case ColorRange.red:
+      //r is clearly the dominant channel
+      w = ((r / sum - 0.4) / 0.15).clamp(0.0, 1.0) *
+          ((r - max(g, b)) / (r + 0.001)).clamp(0.0, 1.0);
+    case ColorRange.orange:
+      //r highest with moderate green (g/r between 0.4 and 0.7)
+      final gRatio = g / (r + 0.001);
+      w = ((r / sum - 0.4) / 0.15).clamp(0.0, 1.0) *
+          ((r - max(g, b)) / (r + 0.001)).clamp(0.0, 1.0) *
+          ((gRatio - 0.4) / 0.3).clamp(0.0, 1.0) *
+          ((0.7 - gRatio) / 0.3).clamp(0.0, 1.0) * 4.0;
+    case ColorRange.yellow:
+      //r and g both high, b low
+      w = ((min(r, g) / (max(r, g) + 0.001) - 0.7) / 0.2).clamp(0.0, 1.0) *
+          (((1 - b / sum) - 0.5) / 0.3).clamp(0.0, 1.0);
+    case ColorRange.green:
+      //g is clearly the dominant channel
+      w = ((g / sum - 0.4) / 0.15).clamp(0.0, 1.0) *
+          ((g - max(r, b)) / (g + 0.001)).clamp(0.0, 1.0);
+    case ColorRange.cyan:
+      //g and b both high, r low
+      w = ((min(g, b) / (max(g, b) + 0.001) - 0.7) / 0.2).clamp(0.0, 1.0) *
+          (((1 - r / sum) - 0.5) / 0.3).clamp(0.0, 1.0);
+    case ColorRange.blue:
+      //b is clearly the dominant channel
+      w = ((b / sum - 0.4) / 0.15).clamp(0.0, 1.0) *
+          ((b - max(r, g)) / (b + 0.001)).clamp(0.0, 1.0);
+    case ColorRange.purple:
+      //b and r both present, g low
+      w = ((min(r, b) / (max(r, b) + 0.001) - 0.5) / 0.3).clamp(0.0, 1.0) *
+          (((1 - g / sum) - 0.5) / 0.3).clamp(0.0, 1.0);
+    case ColorRange.magenta:
+      //r and b present with r dominant, g lowest
+      w = ((min(r, b) / (max(r, b) + 0.001) - 0.5) / 0.3).clamp(0.0, 1.0) *
+          (((1 - g / sum) - 0.5) / 0.3).clamp(0.0, 1.0) *
+          ((r - b) / (r + 0.001)).clamp(0.0, 1.0);
+  }
+
+  return w * chromaGate;
+}
+
 //box blur on a flat array, averages available neighbors at edges
 Float64List _boxBlur(Float64List data, int w, int h, int radius) {
   final out = Float64List(w * h);
@@ -153,30 +206,25 @@ img.Image applyAllColorEdits(img.Image image, List<ColorEdit> edits) {
     smoothHue[i] = deg;
   }
 
-  //pass 1: compute per-pixel luminance delta using smoothed hue/sat
+  //pass 1: compute per-pixel luminance delta using RGB ratio detection
   final lumDeltas = Float64List(n);
 
   for (int y = 0; y < h; y++) {
     for (int x = 0; x < w; x++) {
       final pixel = image.getPixel(x, y);
-      final hsl = rgbToHsl(pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0);
+      final r = pixel.r / 255.0;
+      final g = pixel.g / 255.0;
+      final b = pixel.b / 255.0;
+      final hsl = rgbToHsl(r, g, b);
       final l = hsl[2];
 
       final idx = y * w + x;
-      final sHue = smoothHue[idx];
-      final sSat = smoothSat[idx];
-
-      final satGate = (sSat / 30.0).clamp(0.0, 1.0);
 
       double totalLum = 0;
       double totalLumW = 0;
 
       for (final shift in shifts) {
-        final baseLumW = _hueWeight(sHue, shift.range, 15.0);
-        final gate = shift.lum >= 0
-            ? (sSat / 50.0).clamp(0.0, 1.0)
-            : satGate;
-        final lumW = baseLumW * gate;
+        final lumW = _rgbColorWeight(r, g, b, shift.range);
         if (lumW > 0.01) {
           totalLum += shift.lum * lumW;
           totalLumW += lumW;

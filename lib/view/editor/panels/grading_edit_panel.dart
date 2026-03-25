@@ -29,10 +29,12 @@ class GradingEditPanel extends StatelessWidget {
           _buildSliderRow(context, 'HUE', edit.hue, 0, 360, '${edit.hue.toStringAsFixed(0)}°',
             (v) => vm.applyColorGradingEdit(edit.copyWith(hue: v)),
             (v) => vm.updateColorGradingEditPreview(edit.copyWith(hue: v)),
+            gradient: gradingHueGradientColors(),
           ),
           _buildSliderRow(context, 'STR', edit.strength, 0, 100, '${edit.strength.toStringAsFixed(0)}%',
             (v) => vm.applyColorGradingEdit(edit.copyWith(strength: v)),
             (v) => vm.updateColorGradingEditPreview(edit.copyWith(strength: v)),
+            gradient: gradingStrengthGradientColors(edit.hue),
           ),
         ],
       ),
@@ -41,7 +43,8 @@ class GradingEditPanel extends StatelessWidget {
 
   Widget _buildSliderRow(BuildContext context, String label, double value,
       double min, double max, String display,
-      Function(double) onChangeEnd, Function(double) onChanged) {
+      Function(double) onChangeEnd, Function(double) onChanged,
+      {List<Color>? gradient}) {
     return Row(
       children: [
         SizedBox(
@@ -49,16 +52,45 @@ class GradingEditPanel extends StatelessWidget {
           child: Text(label, style: AppTextStyles.mutedSmall),
         ),
         Expanded(
-          child: SliderTheme(
-            data: AppSliderTheme.of(context),
-            child: Slider(
-              min: min,
-              max: max,
-              value: value,
-              onChanged: onChanged,
-              onChangeEnd: onChangeEnd,
-            ),
-          ),
+          child: gradient != null
+              ? Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 7),
+                      child: Container(
+                        height: 2,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(1),
+                          gradient: LinearGradient(colors: gradient),
+                        ),
+                      ),
+                    ),
+                    SliderTheme(
+                      data: AppSliderTheme.of(context).copyWith(
+                        activeTrackColor: Colors.transparent,
+                        inactiveTrackColor: Colors.transparent,
+                      ),
+                      child: Slider(
+                        min: min,
+                        max: max,
+                        value: value,
+                        onChanged: onChanged,
+                        onChangeEnd: onChangeEnd,
+                      ),
+                    ),
+                  ],
+                )
+              : SliderTheme(
+                  data: AppSliderTheme.of(context),
+                  child: Slider(
+                    min: min,
+                    max: max,
+                    value: value,
+                    onChanged: onChanged,
+                    onChangeEnd: onChangeEnd,
+                  ),
+                ),
         ),
         SizedBox(
           width: 40,

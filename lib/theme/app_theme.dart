@@ -77,7 +77,7 @@ class AppSliderTheme {
       );
 }
 
-/// Center hue (degrees) for each color range — used for gradient sliders.
+/// Center hue (degrees) for each color range  used for gradient sliders
 const Map<ColorRange, double> _rangeHue = {
   ColorRange.red: 0,
   ColorRange.orange: 30,
@@ -89,13 +89,13 @@ const Map<ColorRange, double> _rangeHue = {
   ColorRange.magenta: 315,
 };
 
-/// Converts HSL (h 0-360, s/l 0-1) to a Flutter Color.
+/// Converts HSL (h 0-360, s/l 0-1) to a Flutter Color
 Color _hslColor(double h, double s, double l) {
   final hue = ((h % 360) + 360) % 360;
   return HSLColor.fromAHSL(1.0, hue, s.clamp(0.0, 1.0), l.clamp(0.0, 1.0)).toColor();
 }
 
-/// Builds a gradient for the hue slider — shows neighboring hues.
+/// Builds a gradient for the hue slider, shows neighboring hues
 List<Color> hueGradientColors(ColorRange range) {
   final center = _rangeHue[range]!;
   return [
@@ -107,7 +107,7 @@ List<Color> hueGradientColors(ColorRange range) {
   ];
 }
 
-/// Builds a gradient for the saturation slider — gray to full color.
+/// Builds a gradient for the saturation slider, gray to full color
 List<Color> saturationGradientColors(ColorRange range) {
   final center = _rangeHue[range]!;
   return [
@@ -116,7 +116,7 @@ List<Color> saturationGradientColors(ColorRange range) {
   ];
 }
 
-/// Builds a gradient for the luminance slider — dark to bright.
+/// Builds a gradient for the luminance slider, dark to bright
 List<Color> luminanceGradientColors(ColorRange range) {
   final center = _rangeHue[range]!;
   return [
@@ -126,7 +126,28 @@ List<Color> luminanceGradientColors(ColorRange range) {
   ];
 }
 
-/// A slider track that paints a horizontal gradient instead of flat colors.
+/// Rainbow gradient for color grading hue slider (0-360)
+List<Color> gradingHueGradientColors() {
+  return [
+    _hslColor(0, 0.5, 0.45),
+    _hslColor(60, 0.5, 0.45),
+    _hslColor(120, 0.5, 0.45),
+    _hslColor(180, 0.5, 0.45),
+    _hslColor(240, 0.5, 0.45),
+    _hslColor(300, 0.5, 0.45),
+    _hslColor(360, 0.5, 0.45),
+  ];
+}
+
+/// Gradient for color grading strength slider, gray to the selected hue
+List<Color> gradingStrengthGradientColors(double hue) {
+  return [
+    _hslColor(hue, 0.0, 0.35),
+    _hslColor(hue, 0.5, 0.45),
+  ];
+}
+
+/// A slider track that paints a horizontal gradient instead of flat colors
 class GradientSliderTrackShape extends SliderTrackShape {
   final List<Color> colors;
 
