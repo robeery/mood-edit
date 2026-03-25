@@ -1,23 +1,50 @@
 
 import 'dart:math';
+import 'dart:typed_data';
 import 'package:image/image.dart' as img;
 import '../model/color_grading_edit.dart';
 import 'color_operations.dart' show rgbToHsl, hslToRgb;
 
-//these functions will be improved in the future
-//prototypes
-double _zoneWeight(double lum, ColorGradingZone zone) 
-{
-  const sigma = 50.0;
+Float64List _boxBlur(Float64List data, int w, int h, int radius) {
+  final out = Float64List(w * h);
+  for (int y = 0; y < h; y++) {
+    for (int x = 0; x < w; x++) {
+      double sum = 0;
+      int count = 0;
+      for (int dy = -radius; dy <= radius; dy++) {
+        final ny = y + dy;
+        if (ny < 0 || ny >= h) continue;
+        for (int dx = -radius; dx <= radius; dx++) {
+          final nx = x + dx;
+          if (nx < 0 || nx >= w) continue;
+          sum += data[ny * w + nx];
+          count++;
+        }
+      }
+      out[y * w + x] = sum / count;
+    }
+  }
+  return out;
+}
+
+//smooth ramps that partition 0-255 cleanly (shadows + midtones + highlights = 1.0)
+double _zoneWeight(double lum, ColorGradingZone zone) {
+  final n = lum / 255.0; // normalized 0..1
   switch (zone) {
     case ColorGradingZone.shadows:
-      return exp(-(lum * lum) / (2 * sigma * sigma));
-    case ColorGradingZone.midtones:
-      final d = lum - 128;
-      return exp(-(d * d) / (2 * sigma * sigma));
+      if (n <= 0.25) return 1.0;
+      if (n >= 0.5) return 0.0;
+      final ps = ((n - 0.25) / 0.25).clamp(0.0, 1.0);
+      return 0.5 * (1 + cos(ps * pi));
     case ColorGradingZone.highlights:
-      final d = lum - 255;
-      return exp(-(d * d) / (2 * sigma * sigma));
+      if (n <= 0.5) return 0.0;
+      if (n >= 0.75) return 1.0;
+      final ph = ((n - 0.5) / 0.25).clamp(0.0, 1.0);
+      return 0.5 * (1 - cos(ph * pi));
+    case ColorGradingZone.midtones:
+      final sw = _zoneWeight(lum, ColorGradingZone.shadows);
+      final hw = _zoneWeight(lum, ColorGradingZone.highlights);
+      return 1.0 - sw - hw;
     case ColorGradingZone.global:
       return 1.0;
   }
@@ -36,36 +63,74 @@ img.Image applyColorGrading(img.Image image, List<ColorGradingEdit> edits) {
   if (activeEdits.isEmpty) return image;
 
   final output = img.Image.from(image);
+  final imgW = image.width;
+  final imgH = image.height;
+  final n = imgW * imgH;
 
-  for (int y = 0; y < image.height; y++) {
-    for (int x = 0; x < image.width; x++) {
+  // Pre-processing: smooth chroma noise via YCbCr
+  final cbArr = Float64List(n);
+  final crArr = Float64List(n);
+  final yArr = Float64List(n);
+
+  for (int y = 0; y < imgH; y++) {
+    for (int x = 0; x < imgW; x++) {
       final pixel = image.getPixel(x, y);
-
       final r = pixel.r / 255.0;
       final g = pixel.g / 255.0;
       final b = pixel.b / 255.0;
+      final yVal = 0.299 * r + 0.587 * g + 0.114 * b;
+      final idx = y * imgW + x;
+      yArr[idx] = yVal;
+      cbArr[idx] = 0.564 * (b - yVal);
+      crArr[idx] = 0.713 * (r - yVal);
+    }
+  }
 
-      final lum = (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b);
+  final smoothCb = _boxBlur(cbArr, imgW, imgH, 3);
+  final smoothCr = _boxBlur(crArr, imgW, imgH, 3);
 
-      final hsl = rgbToHsl(r, g, b);
+  for (int y = 0; y < imgH; y++) {
+    for (int x = 0; x < imgW; x++) {
+      final idx = y * imgW + x;
+
+      // Reconstruct smoothed RGB from original Y + blurred chroma
+      final yVal = yArr[idx];
+      final sr = (yVal + 1.403 * smoothCr[idx]).clamp(0.0, 1.0);
+      final sg = (yVal - 0.344 * smoothCb[idx] - 0.714 * smoothCr[idx]).clamp(0.0, 1.0);
+      final sb = (yVal + 1.770 * smoothCb[idx]).clamp(0.0, 1.0);
+
+      final lum = yVal * 255.0;
+
+      final hsl = rgbToHsl(sr, sg, sb);
       double h = hsl[0];
       double s = hsl[1];
       final l = hsl[2];
+
+      double newL = l;
 
       for (final edit in activeEdits) {
         final w = _zoneWeight(lum, edit.zone);
         final t = w * (edit.strength / 100.0);
 
-        // Blend hue toward the target tint color
+        // Blend toward the target tint as a fixed color
+        const tintSat = 40.0;
         h = _lerpHue(h, edit.hue, t);
-        // Boost saturation so the tint becomes visible on neutral pixels.
-        
+        s = s + (tintSat - s) * t;
+        s = s.clamp(0.0, 100.0);
 
-        //t*x, x=30?
-        s = (s + t * 80).clamp(0.0, 100.0);
+        // Apply luminance shift with proportional power curve
+        if (edit.luminance.abs() > 0.001) {
+          final lumShift = w * (edit.luminance / 100.0) * 15;
+          final lt = newL / 100.0;
+          if (lumShift >= 0) {
+            newL = (lt + lumShift / 100.0 * (1 - lt * lt)).clamp(0.0, 1.0) * 100.0;
+          } else {
+            newL = (lt + lumShift / 100.0 * (lt * (2 - lt))).clamp(0.0, 1.0) * 100.0;
+          }
+        }
       }
 
-      final rgb = hslToRgb(h, s, l);
+      final rgb = hslToRgb(h, s, newL);
 
       output.setPixel(x, y, img.ColorRgb8(
         rgb[0].clamp(0, 255).toInt(),

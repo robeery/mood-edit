@@ -187,10 +187,27 @@ ParseResult parseEditsJson(String text) {
         );
       }
 
+      double lumValue = 0;
+      if (item.containsKey('luminance')) {
+        final lum = item['luminance'];
+        if (lum is! num) {
+          return const ParseResult.failure(
+            'ColorGradingEdit "luminance" must be a number',
+          );
+        }
+        if (lum.toDouble() < -100 || lum.toDouble() > 100) {
+          return ParseResult.failure(
+            'ColorGradingEdit "luminance" value $lum out of range [-100, 100]',
+          );
+        }
+        lumValue = lum.toDouble();
+      }
+
       gradingEdits.add(ColorGradingEdit(
         zone: zone,
         hue: hue.toDouble(),
         strength: strength.toDouble(),
+        luminance: lumValue,
       ));
     }
   }

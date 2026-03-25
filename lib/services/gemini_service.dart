@@ -28,7 +28,7 @@ SCHEMA:
     { "range": "<ColorRange>", "hue": <number>, "saturation": <number>, "luminance": <number> }
   ],
   "colorGradingEdits": [
-    { "zone": "<ColorGradingZone>", "hue": <number>, "strength": <number> }
+    { "zone": "<ColorGradingZone>", "hue": <number>, "strength": <number>, "luminance": <number> }
   ]
 }
 
@@ -44,6 +44,7 @@ Selective color ranges: red, orange, yellow, green, cyan, blue, purple, magenta
 Color grading zones: shadows, midtones, highlights, global
   - hue: 0 to 360 (degrees)
   - strength: 0 to 100
+  - luminance: -100 to +100
 
 RULES:
 - The "message" field is REQUIRED. Keep it short (1-2 sentences) explaining what you did.

@@ -147,6 +147,15 @@ List<Color> gradingStrengthGradientColors(double hue) {
   ];
 }
 
+/// Gradient for color grading luminance slider — dark to bright (zone-tinted)
+List<Color> gradingLuminanceGradientColors() {
+  return [
+    _hslColor(0, 0.0, 0.15),
+    _hslColor(0, 0.0, 0.5),
+    _hslColor(0, 0.0, 0.85),
+  ];
+}
+
 /// A slider track that paints a horizontal gradient instead of flat colors
 class GradientSliderTrackShape extends SliderTrackShape {
   final List<Color> colors;
