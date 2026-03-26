@@ -8,7 +8,8 @@ import 'color_operations.dart' show rgbToHsl, hslToRgb;
 
 img.Image applyExposure(img.Image image, double value) {
   final output = img.Image.from(image);
-  final factor = 1.0 + value;
+  //EV stops: +1 = 2x light, -1 = 0.5x, like a real camera
+  final factor = pow(2.0, value).toDouble();
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
@@ -24,14 +25,15 @@ img.Image applyExposure(img.Image image, double value) {
 
 img.Image applyBrightness(img.Image image, double value) {
   final output = img.Image.from(image);
-  final offset = value * 255;
+  //gamma curve: <1 brightens, >1 darkens, preserves black and white
+  final gamma = pow(2.0, -value).toDouble();
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final pixel = image.getPixel(x, y);
-      final r = (pixel.r + offset).clamp(0, 255).toInt();
-      final g = (pixel.g + offset).clamp(0, 255).toInt();
-      final b = (pixel.b + offset).clamp(0, 255).toInt();
+      final r = (pow(pixel.r / 255.0, gamma) * 255).clamp(0, 255).toInt();
+      final g = (pow(pixel.g / 255.0, gamma) * 255).clamp(0, 255).toInt();
+      final b = (pow(pixel.b / 255.0, gamma) * 255).clamp(0, 255).toInt();
       output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
   }

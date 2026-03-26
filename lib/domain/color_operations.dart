@@ -171,7 +171,7 @@ img.Image applyAllColorEdits(img.Image image, List<ColorEdit> edits) {
   final shifts = activeEdits.map((e) => (
     range: e.range,
     hue: e.hue / 100.0 * 40,
-    sat: e.saturation / 100.0 * 50,
+    sat: e.saturation / 100.0 * 100,
     lum: e.luminance / 100.0 * 30,
   )).toList();
 
