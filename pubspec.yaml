@@ -38,6 +38,7 @@ dependencies:
   image: ^4.7.2
   http: ^1.4.0
   flutter_dotenv: ^5.2.1
+  saver_gallery: ^4.1.0
 
 dev_dependencies:
   flutter_test:

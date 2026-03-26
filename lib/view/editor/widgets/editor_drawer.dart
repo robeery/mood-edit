@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../../model/export_option.dart';
 import '../../../theme/app_theme.dart';
+
 class EditorDrawer extends StatelessWidget {
   final VoidCallback onPickImage;
+  final void Function(ExportOption) onExport;
 
-  const EditorDrawer({super.key, required this.onPickImage});
+  const EditorDrawer({
+    super.key,
+    required this.onPickImage,
+    required this.onExport,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +43,39 @@ class EditorDrawer extends StatelessWidget {
                 Navigator.of(context).pop();
                 onPickImage();
               },
+            ),
+            Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                leading: const Icon(Icons.save_outlined, color: AppColors.accent, size: 20),
+                title: const Text(
+                  'SAVE',
+                  style: TextStyle(color: AppColors.accent, fontSize: 11, letterSpacing: 2),
+                ),
+                iconColor: AppColors.muted,
+                collapsedIconColor: AppColors.muted,
+                children: [
+                  for (final option in ExportOption.values)
+                    ListTile(
+                      contentPadding: const EdgeInsets.only(left: 40),
+                      leading: Icon(option.icon, color: option.implemented ? AppColors.accent : AppColors.muted, size: 18),
+                      title: Text(
+                        option.implemented
+                            ? option.label.toUpperCase()
+                            : '${option.label.toUpperCase()} (TBD)',
+                        style: TextStyle(
+                          color: option.implemented ? AppColors.accent : AppColors.muted,
+                          fontSize: 11,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.of(context).pop();
+                        onExport(option);
+                      },
+                    ),
+                ],
+              ),
             ),
             const Divider(color: AppColors.muted, height: 1),
           ],

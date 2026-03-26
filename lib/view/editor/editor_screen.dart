@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../model/export_option.dart';
 import '../../viewmodel/editor_viewmodel.dart';
 import '../../theme/app_theme.dart';
 import 'widgets/empty_state.dart';
 import 'widgets/editor_drawer.dart';
 import 'widgets/pending_edits_bar.dart';
 import 'widgets/image_viewer.dart';
+import 'widgets/tbd_dialog.dart';
 import 'panels/basic_edit_panel.dart';
 import 'panels/color_edit_panel.dart';
 import 'panels/grading_edit_panel.dart';
@@ -22,6 +24,8 @@ class EditorScreen extends StatefulWidget {
 class _EditorScreenState extends State<EditorScreen> {
   final EditorViewModel _vm = EditorViewModel();
   final ImagePicker _picker = ImagePicker();
+  bool _savedBannerVisible = false;
+  bool _savedBannerOpaque = false;
 
   Future<void> _pickImage() async {
     final XFile? pickedFile = await _picker.pickImage(
@@ -49,7 +53,7 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, _) {
         return Scaffold(
           backgroundColor: AppColors.bg,
-          endDrawer: EditorDrawer(onPickImage: _pickImage),
+          endDrawer: EditorDrawer(onPickImage: _pickImage, onExport: _handleExport),
           appBar: AppBar(
             backgroundColor: AppColors.bg,
             elevation: 0,
@@ -70,6 +74,38 @@ class _EditorScreenState extends State<EditorScreen> {
         );
       },
     );
+  }
+
+  Future<void> _handleExport(ExportOption option) async {
+    if (!option.implemented) {
+      showTbdDialog(context);
+      return;
+    }
+
+    if (!_vm.hasImage) return;
+
+    try {
+      await _vm.exportToGallery();
+      if (mounted) {
+        setState(() { _savedBannerVisible = true; _savedBannerOpaque = true; });
+        Future.delayed(const Duration(milliseconds: 1200), () {
+          if (mounted) setState(() => _savedBannerOpaque = false);
+          Future.delayed(const Duration(milliseconds: 400), () {
+            if (mounted) setState(() => _savedBannerVisible = false);
+          });
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: Colors.red.shade900,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   void _showResetDialog() {
@@ -162,6 +198,29 @@ class _EditorScreenState extends State<EditorScreen> {
                   child: PendingEditsBar(
                     onApply: _vm.applyPendingEdits,
                     onDiscard: _vm.discardPendingEdits,
+                  ),
+                ),
+              if (_savedBannerVisible)
+                Positioned(
+                  bottom: 12,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: AnimatedOpacity(
+                      opacity: _savedBannerOpaque ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 400),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: AppColors.highlight,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'SAVED TO GALLERY',
+                          style: TextStyle(color: AppColors.bg, fontSize: 11, letterSpacing: 2, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],

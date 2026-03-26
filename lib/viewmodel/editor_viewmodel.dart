@@ -8,6 +8,7 @@ import '../model/photo_editing_image.dart';
 import '../domain/apply_edits.dart';
 import '../domain/parse_edits_json.dart';
 import '../model/chat_message.dart';
+import '../services/export_service.dart';
 import '../services/gemini_service.dart';
 
 enum EditorMode { basic, selectiveColor, colorGrading, askAi }
@@ -23,6 +24,7 @@ class EditorViewModel extends ChangeNotifier {
   ColorGradingZone _selectedGradingZone = ColorGradingZone.shadows;
   final List<ChatMessage> _messages = [];
   final GeminiService _geminiService = GeminiService();
+  final ExportService _exportService = ExportService();
   ParsedEdits? _pendingEdits;
   Uint8List? _snapshotProcessedImage;
   String _selectedModel = 'gemini-2.5-flash-lite';
@@ -320,6 +322,11 @@ class EditorViewModel extends ChangeNotifier {
   void clearChat() {
     _messages.clear();
     notifyListeners();
+  }
+
+  Future<void> exportToGallery() async {
+    if (_processedImage == null) return;
+    await _exportService.saveToGallery(_processedImage!);
   }
 
   String _buildCurrentStateJson() {
