@@ -175,35 +175,39 @@ img.Image applyAllColorEdits(img.Image image, List<ColorEdit> edits) {
     lum: e.luminance / 100.0 * 30,
   )).toList();
 
-  //pre-processing: smooth out hue and saturation across neighbors
-  //hue is decomposed into cos/sin to handle the 360 wraparound correctly
-  final hueCos = Float64List(n);
-  final hueSin = Float64List(n);
-  final rawSat = Float64List(n);
+  //pre-processing: smooth chroma noise via YCbCr
+  final yArr = Float64List(n);
+  final cbArr = Float64List(n);
+  final crArr = Float64List(n);
 
   for (int y = 0; y < h; y++) {
     for (int x = 0; x < w; x++) {
       final pixel = image.getPixel(x, y);
-      final hsl = rgbToHsl(pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0);
-      final hRad = hsl[0] * pi / 180.0;
+      final r = pixel.r / 255.0;
+      final g = pixel.g / 255.0;
+      final b = pixel.b / 255.0;
+      final yVal = 0.299 * r + 0.587 * g + 0.114 * b;
       final idx = y * w + x;
-      hueCos[idx] = cos(hRad);
-      hueSin[idx] = sin(hRad);
-      rawSat[idx] = hsl[1];
+      yArr[idx] = yVal;
+      cbArr[idx] = 0.564 * (b - yVal);
+      crArr[idx] = 0.713 * (r - yVal);
     }
   }
 
-  //9x9 blur on hue components and saturation
-  final blurCos = _boxBlur(hueCos, w, h, 4);
-  final blurSin = _boxBlur(hueSin, w, h, 4);
-  final smoothSat = _boxBlur(rawSat, w, h, 4);
+  //7x7 blur on chroma only, Y untouched
+  final smoothCb = _boxBlur(cbArr, w, h, 3);
+  final smoothCr = _boxBlur(crArr, w, h, 3);
 
-  //recover smoothed hue from blurred cos/sin
+  //reconstruct smoothed RGB - HSL for smoothHue/smoothSat
   final smoothHue = Float64List(n);
+  final smoothSat = Float64List(n);
   for (int i = 0; i < n; i++) {
-    var deg = atan2(blurSin[i], blurCos[i]) * 180.0 / pi;
-    if (deg < 0) deg += 360.0;
-    smoothHue[i] = deg;
+    final sr = (yArr[i] + 1.403 * smoothCr[i]).clamp(0.0, 1.0);
+    final sg = (yArr[i] - 0.344 * smoothCb[i] - 0.714 * smoothCr[i]).clamp(0.0, 1.0);
+    final sb = (yArr[i] + 1.770 * smoothCb[i]).clamp(0.0, 1.0);
+    final hsl = rgbToHsl(sr, sg, sb);
+    smoothHue[i] = hsl[0];
+    smoothSat[i] = hsl[1];
   }
 
   //pass 1: compute per-pixel luminance delta using RGB ratio detection
