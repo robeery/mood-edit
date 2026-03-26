@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../../model/export_option.dart';
+import '../../../model/export_settings.dart';
 import '../../../theme/app_theme.dart';
+import 'export_settings_dialog.dart';
 
 class EditorDrawer extends StatelessWidget {
   final VoidCallback onPickImage;
   final void Function(ExportOption) onExport;
+  final ExportSettings exportSettings;
+  final void Function(ExportSettings) onExportSettingsChanged;
 
   const EditorDrawer({
     super.key,
     required this.onPickImage,
     required this.onExport,
+    required this.exportSettings,
+    required this.onExportSettingsChanged,
   });
 
   @override
@@ -69,6 +75,15 @@ class EditorDrawer extends StatelessWidget {
                           letterSpacing: 2,
                         ),
                       ),
+                      trailing: option.implemented
+                          ? IconButton(
+                              icon: const Icon(Icons.settings_outlined, color: AppColors.muted, size: 16),
+                              onPressed: () async {
+                                final result = await showExportSettingsDialog(context, exportSettings);
+                                if (result != null) onExportSettingsChanged(result);
+                              },
+                            )
+                          : null,
                       onTap: () {
                         Navigator.of(context).pop();
                         onExport(option);

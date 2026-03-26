@@ -53,7 +53,12 @@ class _EditorScreenState extends State<EditorScreen> {
       builder: (context, _) {
         return Scaffold(
           backgroundColor: AppColors.bg,
-          endDrawer: EditorDrawer(onPickImage: _pickImage, onExport: _handleExport),
+          endDrawer: EditorDrawer(
+            onPickImage: _pickImage,
+            onExport: _handleExport,
+            exportSettings: _vm.exportSettings,
+            onExportSettingsChanged: _vm.updateExportSettings,
+          ),
           appBar: AppBar(
             backgroundColor: AppColors.bg,
             elevation: 0,

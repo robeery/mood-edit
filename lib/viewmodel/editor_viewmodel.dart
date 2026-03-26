@@ -8,6 +8,7 @@ import '../model/photo_editing_image.dart';
 import '../domain/apply_edits.dart';
 import '../domain/parse_edits_json.dart';
 import '../model/chat_message.dart';
+import '../model/export_settings.dart';
 import '../services/export_service.dart';
 import '../services/gemini_service.dart';
 
@@ -25,6 +26,7 @@ class EditorViewModel extends ChangeNotifier {
   final List<ChatMessage> _messages = [];
   final GeminiService _geminiService = GeminiService();
   final ExportService _exportService = ExportService();
+  ExportSettings _exportSettings = const ExportSettings();
   ParsedEdits? _pendingEdits;
   Uint8List? _snapshotProcessedImage;
   String _selectedModel = 'gemini-2.5-flash-lite';
@@ -324,9 +326,16 @@ class EditorViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  ExportSettings get exportSettings => _exportSettings;
+
+  void updateExportSettings(ExportSettings settings) {
+    _exportSettings = settings;
+    notifyListeners();
+  }
+
   Future<void> exportToGallery() async {
     if (_processedImage == null) return;
-    await _exportService.saveToGallery(_processedImage!);
+    await _exportService.saveToGallery(_processedImage!, _exportSettings);
   }
 
   String _buildCurrentStateJson() {
