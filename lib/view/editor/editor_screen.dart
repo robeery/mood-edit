@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../model/export_option.dart';
 import '../../viewmodel/editor_viewmodel.dart';
@@ -99,6 +100,22 @@ class _EditorScreenState extends State<EditorScreen> {
             if (mounted) setState(() => _savedBannerVisible = false);
           });
         });
+      }
+    } on GalException catch (e) {
+      if (mounted) {
+        final message = switch (e.type) {
+          GalExceptionType.accessDenied => 'Permission denied. Please enable gallery access in Settings.',
+          GalExceptionType.notSupportedFormat => 'Unsupported image format.',
+          GalExceptionType.notEnoughSpace => 'Not enough storage space.',
+          GalExceptionType.unexpected => 'Unexpected error occurred.',
+        };
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.red.shade900,
+            duration: const Duration(seconds: 3),
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {

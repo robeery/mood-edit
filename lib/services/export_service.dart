@@ -1,22 +1,13 @@
 import 'dart:typed_data';
+import 'package:gal/gal.dart';
 import 'package:image/image.dart' as img;
-import 'package:saver_gallery/saver_gallery.dart';
 import '../model/export_settings.dart';
 
 class ExportService {
   Future<void> saveToGallery(Uint8List imageBytes, ExportSettings settings) async {
     final encoded = _encode(imageBytes, settings);
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final result = await SaverGallery.saveImage(
-      encoded,
-      fileName: 'edited_$timestamp.${settings.format.extension}',
-      androidRelativePath: 'Pictures/Licenta',
-      skipIfExists: false,
-    );
-
-    if (!result.isSuccess) {
-      throw Exception('Failed to save image');
-    }
+    final name = 'edited_${DateTime.now().millisecondsSinceEpoch}.${settings.format.extension}';
+    await Gal.putImageBytes(encoded, name: name);
   }
 
   Uint8List _encode(Uint8List imageBytes, ExportSettings settings) {
