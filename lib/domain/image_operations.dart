@@ -42,24 +42,22 @@ img.Image applyBrightness(img.Image image, double value) {
 
 img.Image applyHighlights(img.Image image, double value) {
   final output = img.Image.from(image);
-  final offset = value * 75;
+  value *= 0.7;
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final pixel = image.getPixel(x, y);
+      final lum = (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b) / 255.0;
 
-      int _adjust(num channel) {
-        if (channel > 180) {
-          return (channel + offset).clamp(0, 255).toInt();
-        }
-        return channel.toInt();
-      }
+      //smooth weight: 0 below midtones, ramps up through highlights
+      final w = ((lum - 0.4) / 0.6).clamp(0.0, 1.0);
+      //squared for softer onset, stronger at the top
+      final strength = w * w * value;
 
-      output.setPixel(x, y, img.ColorRgb8(
-        _adjust(pixel.r),
-        _adjust(pixel.g),
-        _adjust(pixel.b),
-      ));
+      final r = (pixel.r + pixel.r * strength).clamp(0, 255).toInt();
+      final g = (pixel.g + pixel.g * strength).clamp(0, 255).toInt();
+      final b = (pixel.b + pixel.b * strength).clamp(0, 255).toInt();
+      output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
   }
   return output;
@@ -67,24 +65,24 @@ img.Image applyHighlights(img.Image image, double value) {
 
 img.Image applyShadows(img.Image image, double value) {
   final output = img.Image.from(image);
-  final offset = value * 75;
+  value *= 0.7;
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final pixel = image.getPixel(x, y);
+      final lum = (0.299 * pixel.r + 0.587 * pixel.g + 0.114 * pixel.b) / 255.0;
 
-      int _adjust(num channel) {
-        if (channel < 75) {
-          return (channel + offset).clamp(0, 255).toInt();
-        }
-        return channel.toInt();
-      }
+      //smooth weight: 0 above midtones, ramps up into shadows
+      final w = ((0.6 - lum) / 0.6).clamp(0.0, 1.0);
+      final strength = w * w * value;
 
-      output.setPixel(x, y, img.ColorRgb8(
-        _adjust(pixel.r),
-        _adjust(pixel.g),
-        _adjust(pixel.b),
-      ));
+      //positive: lift shadows using gamma curve (like brightness)
+      //negative: crush shadows using gamma curve
+      final gamma = pow(2.0, -strength).toDouble();
+      final r = (pow(pixel.r / 255.0, gamma) * 255).clamp(0, 255).toInt();
+      final g = (pow(pixel.g / 255.0, gamma) * 255).clamp(0, 255).toInt();
+      final b = (pow(pixel.b / 255.0, gamma) * 255).clamp(0, 255).toInt();
+      output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
   }
   return output;
