@@ -89,18 +89,41 @@ img.Image applyShadows(img.Image image, double value) {
 }
 
 img.Image applyContrast(img.Image image, double value) {
+  final contrast = value.clamp(-1.0, 1.0);
   final output = img.Image.from(image);
-  final factor = (259 * (value * 255 + 255)) / (255 * (259 - value * 255));
+  if (contrast == 0.0) return output;
 
-  for (int y = 0; y < image.height; y++) {
-    for (int x = 0; x < image.width; x++) {
-      final pixel = image.getPixel(x, y);
-      final r = (factor * (pixel.r - 128) + 128).clamp(0, 255).toInt();
-      final g = (factor * (pixel.g - 128) + 128).clamp(0, 255).toInt();
-      final b = (factor * (pixel.b - 128) + 128).clamp(0, 255).toInt();
-      output.setPixel(x, y, img.ColorRgb8(r, g, b));
+  //note to self:
+  //maybe, in the future, implement a LUT to other functions as well
+  
+  //piecewise S-curve via power function, pre-baked into a LUT
+  final gamma = pow(2.0, contrast);
+  final lut = List<int>.filled(256, 0);
+  for (int i = 0; i < 256; i++) {
+    final t = i / 255.0;
+    final adjusted = t < 0.5
+        ? 0.5 * pow(2.0 * t, gamma)
+        : 1.0 - 0.5 * pow(2.0 * (1.0 - t), gamma);
+    lut[i] = (adjusted * 255).clamp(0, 255).toInt();
+  }
+
+  //apply via luminance ratio to preserve color balance
+  for (final pixel in output) {
+    final num r = pixel.r;
+    final num g = pixel.g;
+    final num b = pixel.b;
+
+    final double lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    final int lumInt = lum.round().clamp(0, 255);
+
+    if (lumInt > 0) {
+      final double ratio = lut[lumInt] / lum;
+      pixel.r = (r * ratio).round().clamp(0, 255);
+      pixel.g = (g * ratio).round().clamp(0, 255);
+      pixel.b = (b * ratio).round().clamp(0, 255);
     }
   }
+
   return output;
 }
 
@@ -121,14 +144,16 @@ img.Image applyWarmth(img.Image image, double value) {
 
 img.Image applyTint(img.Image image, double value) {
   final output = img.Image.from(image);
-  final offset = value * 20;
+  //green-magenta axis: +tint = magenta (R+ G- B+), -tint = green (R- G+ B-)
+  final offset = value * 15;
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final pixel = image.getPixel(x, y);
       final r = (pixel.r + offset).clamp(0, 255).toInt();
-      final g = (pixel.g - offset).clamp(0, 255).toInt();
-      output.setPixel(x, y, img.ColorRgb8(r, g, pixel.b.toInt()));
+      final g = (pixel.g - offset * 1.5).clamp(0, 255).toInt();
+      final b = (pixel.b + offset).clamp(0, 255).toInt();
+      output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
   }
   return output;
