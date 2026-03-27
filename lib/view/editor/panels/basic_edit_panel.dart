@@ -3,10 +3,44 @@ import '../../../model/edit.dart';
 import '../../../theme/app_theme.dart';
 import '../../../viewmodel/editor_viewmodel.dart';
 
-class BasicEditPanel extends StatelessWidget {
+class BasicEditPanel extends StatefulWidget {
   final EditorViewModel vm;
 
   const BasicEditPanel({super.key, required this.vm});
+
+  @override
+  State<BasicEditPanel> createState() => _BasicEditPanelState();
+}
+
+class _BasicEditPanelState extends State<BasicEditPanel> {
+  final _scrollController = ScrollController();
+
+  EditorViewModel get vm => widget.vm;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  static const Map<OperationType, IconData> _operationIcons = {
+    OperationType.exposure: Icons.exposure,
+    OperationType.brightness: Icons.wb_sunny_outlined,
+    OperationType.highlights: Icons.tonality,
+    OperationType.shadows: Icons.tonality,
+    OperationType.contrast: Icons.contrast,
+    OperationType.warmth: Icons.thermostat,
+    OperationType.tint: Icons.water_drop_outlined,
+    OperationType.sharpness: Icons.change_history,
+    OperationType.saturation: Icons.invert_colors,
+    OperationType.definition: Icons.details,
+    OperationType.vibrance: Icons.invert_colors,
+    OperationType.blackpoint: Icons.album,
+    OperationType.vignette: Icons.vignette,
+    OperationType.noiseReduction: Icons.blur_linear_sharp,
+    OperationType.grain: Icons.grain_sharp,
+    OperationType.fade: Icons.deblur,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -80,56 +114,77 @@ class BasicEditPanel extends StatelessWidget {
   Widget _buildOperationBar() {
     return SizedBox(
       height: 64,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: OperationType.values.length,
-        itemBuilder: (context, index) {
-          final operation = OperationType.values[index];
-          final isSelected = operation == vm.selectedOperation;
-          final hasEdit = vm.hasEdit(operation);
-
-          return GestureDetector(
-            onTap: () => vm.setSelectedOperation(operation),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? AppColors.highlight : Colors.transparent,
-                borderRadius: BorderRadius.circular(2),
-                border: Border.all(
-                  color: isSelected ? AppColors.highlight : AppColors.muted,
-                  width: 1,
-                ),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    operation.name.toUpperCase(),
-                    style: TextStyle(
-                      color: isSelected ? AppColors.bg : AppColors.muted,
-                      fontSize: 11,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  if (hasEdit) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 4,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: isSelected ? AppColors.bg : AppColors.accent,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+      child: Theme(
+        data: ThemeData(
+          scrollbarTheme: ScrollbarThemeData(
+            thumbColor: WidgetStatePropertyAll(
+              AppColors.muted.withValues(alpha: 0.4),
             ),
-          );
-        },
+            thickness: const WidgetStatePropertyAll(3),
+            radius: const Radius.circular(2),
+            minThumbLength: 40,
+          ),
+        ),
+        child: Scrollbar(
+          controller: _scrollController,
+          thumbVisibility: true,
+          child: ListView.builder(
+            controller: _scrollController,
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 8),
+            itemCount: OperationType.values.length,
+            itemBuilder: (context, index) {
+              final operation = OperationType.values[index];
+              final isSelected = operation == vm.selectedOperation;
+              final hasEdit = vm.hasEdit(operation);
+              final icon = _operationIcons[operation] ?? Icons.tune;
+
+              return GestureDetector(
+                onTap: () => vm.setSelectedOperation(operation),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColors.highlight : Colors.transparent,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Transform(
+                          alignment: Alignment.center,
+                          transform: (operation == OperationType.highlights || operation == OperationType.vibrance)
+                              ? Matrix4.diagonal3Values(-1, 1, 1)
+                              : Matrix4.identity(),
+                          child: Icon(
+                            icon,
+                            size: 28,
+                            color: isSelected ? AppColors.bg : AppColors.muted,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      AnimatedOpacity(
+                        duration: const Duration(milliseconds: 150),
+                        opacity: hasEdit ? 1.0 : 0.0,
+                        child: Container(
+                          width: 4,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.highlight : AppColors.accent,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

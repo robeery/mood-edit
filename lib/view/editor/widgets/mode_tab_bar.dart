@@ -15,7 +15,7 @@ class ModeTabBar extends StatelessWidget {
   static const _modes = [
     (mode: EditorMode.basic,          icon: Icons.tune,              label: 'BASIC'),
     (mode: EditorMode.selectiveColor, icon: Icons.palette_outlined,  label: 'COLOR'),
-    (mode: EditorMode.colorGrading,   icon: Icons.gradient_outlined, label: 'GRADING'),
+    (mode: EditorMode.colorGrading,   icon: Icons.motion_photos_on ,      label: 'GRADING'),
     (mode: EditorMode.askAi,          icon: Icons.auto_awesome,      label: 'AI'),
   ];
 

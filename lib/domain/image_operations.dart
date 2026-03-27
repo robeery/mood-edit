@@ -171,18 +171,25 @@ img.Image applySharpness(img.Image image, double value) {
 
 
 img.Image applyDefinition(img.Image image, double value) {
-  
-  final blurred = img.gaussianBlur(img.Image.from(image), radius: 5);
+  //larger radius separates local contrast from fine edges (sharpness uses ~1-2)
+  final blurred = img.gaussianBlur(img.Image.from(image), radius: 20);
   final output = img.Image.from(image);
+  final strength = value * 1.2;
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final orig = image.getPixel(x, y);
       final blur = blurred.getPixel(x, y);
 
-      final r = (orig.r + (orig.r - blur.r) * value).clamp(0, 255).toInt();
-      final g = (orig.g + (orig.g - blur.g) * value).clamp(0, 255).toInt();
-      final b = (orig.b + (orig.b - blur.b) * value).clamp(0, 255).toInt();
+      //luminance difference between original and blurred
+      final origLum = 0.299 * orig.r + 0.587 * orig.g + 0.114 * orig.b;
+      final blurLum = 0.299 * blur.r + 0.587 * blur.g + 0.114 * blur.b;
+      final delta = (origLum - blurLum) * strength;
+
+      //apply uniform luminance shift to all channels, preserving color
+      final r = (orig.r + delta).clamp(0, 255).toInt();
+      final g = (orig.g + delta).clamp(0, 255).toInt();
+      final b = (orig.b + delta).clamp(0, 255).toInt();
 
       output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
@@ -298,6 +305,7 @@ img.Image applyVignette(img.Image image, double value) {
 }
 
 //gaussian blur for now
+//might rename this to blur later
 img.Image applyNoiseReduction(img.Image image, double value) {
   final radius = (value * 3).round().clamp(1, 3);
   return img.gaussianBlur(image, radius: radius);
