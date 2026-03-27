@@ -199,7 +199,9 @@ img.Image applySaturation(img.Image image, double value) {
       final pixel = image.getPixel(x, y);
 
       final hsl = rgbToHsl(pixel.r / 255.0, pixel.g / 255.0, pixel.b / 255.0);
-      final newS = (hsl[1] + value * 100).clamp(0.0, 100.0);
+      //asymmetric: -100 fully desaturates, +100 gives a moderate boost
+      final shift = value > 0 ? value * 40 : value * 100;
+      final newS = (hsl[1] + shift).clamp(0.0, 100.0);
       final rgb = hslToRgb(hsl[0], newS, hsl[2]);
 
       output.setPixel(x, y, img.ColorRgb8(
@@ -227,9 +229,8 @@ img.Image applyVibrance(img.Image image, double value) {
       final min = [r, g, b].reduce((a, b) => a < b ? a : b);
       final s = max == 0 ? 0.0 : (max - min) / max;
 
-      final adjustment = value * (1 - s) * s;
-
-      final factor = 1.0 + adjustment;
+      //boost inversely proportional to existing saturation
+      final factor = 1.0 + value * (1.0 - s);
 
       final mid = (r + g + b) / 3.0;
       final nr = (mid + (r - mid) * factor).clamp(0.0, 1.0);
@@ -248,7 +249,7 @@ img.Image applyVibrance(img.Image image, double value) {
 
 img.Image applyBlackpoint(img.Image image, double value) {
   final output = img.Image.from(image);
-  final b = value * 255; // blackpoint threshold
+  final b = value * 60; // max threshold ~60, not 255
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
@@ -323,15 +324,17 @@ img.Image applyGrain(img.Image image, double value) {
 
 img.Image applyFade(img.Image image, double value) {
   final output = img.Image.from(image);
-  final lift = value * 50;
+  //fade lifts shadows and slightly desaturates, like a film wash
+  final strength = value * 0.4;
+  final lift = strength * 80;
 
   for (int y = 0; y < image.height; y++) {
     for (int x = 0; x < image.width; x++) {
       final pixel = image.getPixel(x, y);
 
-      final r = (pixel.r * (1 - value) + lift).clamp(0, 255).toInt();
-      final g = (pixel.g * (1 - value) + lift).clamp(0, 255).toInt();
-      final b = (pixel.b * (1 - value) + lift).clamp(0, 255).toInt();
+      final r = (pixel.r * (1 - strength) + lift).clamp(0, 255).toInt();
+      final g = (pixel.g * (1 - strength) + lift).clamp(0, 255).toInt();
+      final b = (pixel.b * (1 - strength) + lift).clamp(0, 255).toInt();
 
       output.setPixel(x, y, img.ColorRgb8(r, g, b));
     }
