@@ -150,6 +150,40 @@ class _ChatPanelState extends State<ChatPanel> {
     );
   }
 
+  void _showClearChatDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        title: const Text('CLEAR CHAT', style: AppTextStyles.screenTitle),
+        content: const Text(
+          'This will permanently delete the conversation. The AI will lose all context from this session.',
+          style: TextStyle(color: AppColors.accent, fontSize: 13),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'CANCEL',
+              style: TextStyle(color: AppColors.muted, fontSize: 11, letterSpacing: 2),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              widget.vm.clearChat();
+            },
+            child: const Text(
+              'CLEAR',
+              style: TextStyle(color: AppColors.highlight, fontSize: 11, letterSpacing: 2),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInputArea() {
     final isOnline = widget.vm.isOnline;
 
@@ -185,6 +219,12 @@ class _ChatPanelState extends State<ChatPanel> {
                         if (value != null) widget.vm.setSelectedModel(value);
                       },
                     ),
+                    const Spacer(),
+                    if (widget.vm.messages.isNotEmpty)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: AppColors.muted, size: 20),
+                        onPressed: () => _showClearChatDialog(),
+                      ),
                   ],
                 ),
                 Row(
