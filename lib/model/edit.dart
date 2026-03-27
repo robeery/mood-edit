@@ -23,7 +23,6 @@ extension OperationTypeExtension on OperationType {
       case OperationType.sharpness:
       case OperationType.definition:
       case OperationType.blackpoint:
-      case OperationType.vignette:
       case OperationType.noiseReduction:
       case OperationType.grain:
       case OperationType.fade:

@@ -284,7 +284,8 @@ img.Image applyVignette(img.Image image, double value) {
       final dy = y - centerY;
       final dist = sqrt(dx * dx + dy * dy);
 
-      final factor = 1.0 - (value * (dist / maxDist));
+      final d = dist / maxDist;
+      final factor = 1.0 - (value * d * d);
 
       final r = (pixel.r * factor).clamp(0, 255).toInt();
       final g = (pixel.g * factor).clamp(0, 255).toInt();
@@ -304,7 +305,7 @@ img.Image applyNoiseReduction(img.Image image, double value) {
 
 img.Image applyGrain(img.Image image, double value) {
   final output = img.Image.from(image);
-  final random = Random();
+  final random = Random(42);
   final intensity = value * 80;
 
   for (int y = 0; y < image.height; y++) {
