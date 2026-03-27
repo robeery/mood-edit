@@ -1,5 +1,7 @@
 
+import 'dart:async';
 import 'dart:convert';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import '../model/edit.dart';
 import '../model/color_edit.dart';
@@ -19,6 +21,28 @@ class EditorViewModel extends ChangeNotifier {
   Uint8List? _processedImage;
   bool _isProcessing = false;
   bool _isWaitingForAi = false;
+  bool _isOnline = true;
+  late final StreamSubscription<List<ConnectivityResult>> _connectivitySub;
+
+  EditorViewModel() {
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final online = results.any((r) => r != ConnectivityResult.none);
+      if (online != _isOnline) {
+        _isOnline = online;
+        notifyListeners();
+      }
+    });
+    _checkInitialConnectivity();
+  }
+
+  Future<void> _checkInitialConnectivity() async {
+    final results = await Connectivity().checkConnectivity();
+    final online = results.any((r) => r != ConnectivityResult.none);
+    if (online != _isOnline) {
+      _isOnline = online;
+      notifyListeners();
+    }
+  }
   OperationType _selectedOperation = OperationType.exposure;
   ColorRange _selectedColorRange = ColorRange.red;
   EditorMode _editorMode = EditorMode.basic;
@@ -43,6 +67,13 @@ class EditorViewModel extends ChangeNotifier {
   Uint8List? get originalBytes => _photoEditingImage?.originalBytes;
   bool get isProcessing => _isProcessing;
   bool get isWaitingForAi => _isWaitingForAi;
+  bool get isOnline => _isOnline;
+
+  @override
+  void dispose() {
+    _connectivitySub.cancel();
+    super.dispose();
+  }
   OperationType get selectedOperation => _selectedOperation;
   ColorRange get selectedColorRange => _selectedColorRange;
   EditorMode get editorMode => _editorMode;

@@ -39,6 +39,7 @@ dependencies:
   http: ^1.4.0
   flutter_dotenv: ^5.2.1
   gal: ^2.3.0
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

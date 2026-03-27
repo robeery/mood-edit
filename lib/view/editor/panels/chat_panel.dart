@@ -129,63 +129,77 @@ class _ChatPanelState extends State<ChatPanel> {
   }
 
   Widget _buildInputArea() {
+    final isOnline = widget.vm.isOnline;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.muted, width: 0.5)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            children: [
-              const Text(
-                'MODEL ',
-                style: TextStyle(color: AppColors.muted, fontSize: 9, letterSpacing: 2),
-              ),
-              DropdownButton<String>(
-                value: widget.vm.selectedModel,
-                dropdownColor: AppColors.surface,
-                style: const TextStyle(color: AppColors.accent, fontSize: 11),
-                underline: const SizedBox.shrink(),
-                isDense: true,
-                icon: const Icon(Icons.arrow_drop_down, color: AppColors.muted, size: 16),
-                items: EditorViewModel.availableModels.map((model) {
-                  return DropdownMenuItem(
-                    value: model,
-                    child: Text(model, style: const TextStyle(fontSize: 11)),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  if (value != null) widget.vm.setSelectedModel(value);
-                },
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _chatController,
-                  style: const TextStyle(color: AppColors.highlight, fontSize: 13),
-                  decoration: const InputDecoration(
-                    hintText: 'Type a message...',
-                    hintStyle: TextStyle(color: AppColors.muted, fontSize: 13),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 8),
-                  ),
-                  onSubmitted: (_) => _sendChat(),
+      child: isOnline
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'MODEL ',
+                      style: TextStyle(color: AppColors.muted, fontSize: 9, letterSpacing: 2),
+                    ),
+                    DropdownButton<String>(
+                      value: widget.vm.selectedModel,
+                      dropdownColor: AppColors.surface,
+                      style: const TextStyle(color: AppColors.accent, fontSize: 11),
+                      underline: const SizedBox.shrink(),
+                      isDense: true,
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.muted, size: 16),
+                      items: EditorViewModel.availableModels.map((model) {
+                        return DropdownMenuItem(
+                          value: model,
+                          child: Text(model, style: const TextStyle(fontSize: 11)),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) widget.vm.setSelectedModel(value);
+                      },
+                    ),
+                  ],
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.send, color: AppColors.accent, size: 20),
-                onPressed: _sendChat,
-              ),
-            ],
-          ),
-        ],
-      ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _chatController,
+                        style: const TextStyle(color: AppColors.highlight, fontSize: 13),
+                        decoration: const InputDecoration(
+                          hintText: 'Type a message...',
+                          hintStyle: TextStyle(color: AppColors.muted, fontSize: 13),
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(vertical: 8),
+                        ),
+                        onSubmitted: (_) => _sendChat(),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.send, color: AppColors.accent, size: 20),
+                      onPressed: _sendChat,
+                    ),
+                  ],
+                ),
+              ],
+            )
+          : const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.wifi_off, color: AppColors.muted, size: 16),
+                SizedBox(width: 8),
+                Text(
+                  'NO CONNECTION',
+                  style: TextStyle(color: AppColors.muted, fontSize: 11, letterSpacing: 2),
+                ),
+              ],
+            ),
     );
   }
 }
