@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
+import '../model/ai_exception.dart';
 import '../model/chat_message.dart';
 
 class GeminiService {
@@ -70,9 +72,10 @@ RULES:
 
     final url = Uri.parse('$_baseUrl/$model:generateContent?key=$_apiKey');
 
-    // Build conversation history (text only — no images in past turns)
+    // Build conversation history (text only - no images in past turns)
     final contents = <Map<String, dynamic>>[];
     for (final msg in history) {
+      if (msg.isError) continue;
       contents.add({
         'role': msg.isUser ? 'user' : 'model',
         'parts': [{'text': msg.text}],
@@ -107,14 +110,22 @@ RULES:
       },
     });
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: body,
-    );
+    final http.Response response;
+    try {
+      response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
+    } on SocketException {
+      throw const AiException(
+        type: AiErrorType.unknown,
+        message: 'Connection failed. Check your internet.',
+      );
+    }
 
     if (response.statusCode != 200) {
-      throw Exception('Gemini API error ${response.statusCode}: ${response.body}');
+      throw AiException.fromStatusCode(response.statusCode, response.body);
     }
 
     final json = jsonDecode(response.body) as Map<String, dynamic>;

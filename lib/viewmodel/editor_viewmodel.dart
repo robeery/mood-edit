@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import '../model/ai_exception.dart';
 import '../model/edit.dart';
 import '../model/color_edit.dart';
 import '../model/color_grading_edit.dart';
@@ -56,6 +57,7 @@ class EditorViewModel extends ChangeNotifier {
   String _selectedModel = 'gemini-2.5-flash-lite';
 
   static const List<String> availableModels = [
+    'gemini-fake-model',
     'gemini-2.5-flash-lite',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
@@ -265,40 +267,66 @@ class EditorViewModel extends ChangeNotifier {
         : List<ChatMessage>.from(_messages);
     final stateJson = _buildCurrentStateJson();
 
-    _messages.add(ChatMessage(text: text, isUser: true));
+    _messages.add(ChatMessage(text: text, type: MessageType.user));
     notifyListeners();
 
     // Call Gemini API
     _isWaitingForAi = true;
     notifyListeners();
 
-    final String aiReply;
+    String aiReply;
     try {
-      aiReply = await _geminiService.sendPrompt(
-        text,
-        imageBytes: _processedImage,
-        model: _selectedModel,
-        history: history,
-        currentStateJson: stateJson,
-      );
+      aiReply = await _sendWithRetry(text, history, stateJson);
+    } on AiException catch (e) {
+      _isWaitingForAi = false;
+      _messages.add(ChatMessage(text: e.message, type: MessageType.error));
+      notifyListeners();
+      return null;
     } catch (e) {
       _isWaitingForAi = false;
+      _messages.add(ChatMessage(text: 'Unexpected error: $e', type: MessageType.error));
       notifyListeners();
-      return e.toString();
+      return null;
     }
 
     _isWaitingForAi = false;
 
-    // Parse
-    final result = parseEditsJson(aiReply);
+    // Parse with retry on bad response
+    var result = parseEditsJson(aiReply);
     if (result.error != null) {
-      _messages.add(ChatMessage(text: aiReply, isUser: false));
-      notifyListeners();
-      return result.error;
+      // Retry once with correction prompt
+      try {
+        _isWaitingForAi = true;
+        notifyListeners();
+        aiReply = await _geminiService.sendPrompt(
+          'Your previous response had an error: ${result.error}. Fix and resend as valid JSON.',
+          model: _selectedModel,
+          history: history,
+          currentStateJson: stateJson,
+        );
+        _isWaitingForAi = false;
+        result = parseEditsJson(aiReply);
+      } on AiException catch (e) {
+        _isWaitingForAi = false;
+        _messages.add(ChatMessage(text: e.message, type: MessageType.error));
+        notifyListeners();
+        return null;
+      } catch (_) {
+        _isWaitingForAi = false;
+      }
+
+      if (result.error != null) {
+        _messages.add(ChatMessage(
+          text: 'AI returned invalid response after retrying. Error: ${result.error}.\nPlease try again.',
+          type: MessageType.error,
+        ));
+        notifyListeners();
+        return null;
+      }
     }
 
     final parsed = result.edits!;
-    _messages.add(ChatMessage(text: parsed.message ?? 'Edits applied.', isUser: false));
+    _messages.add(ChatMessage(text: parsed.message ?? 'Edits applied.', type: MessageType.ai));
 
     // Snapshot current state before applying preview
     final model = _photoEditingImage!;
@@ -324,6 +352,34 @@ class EditorViewModel extends ChangeNotifier {
     _isProcessing = false;
     notifyListeners();
     return null;
+  }
+
+  Future<String> _sendWithRetry(
+    String text,
+    List<ChatMessage> history,
+    String stateJson,
+  ) async {
+    try {
+      return await _geminiService.sendPrompt(
+        text,
+        imageBytes: _processedImage,
+        model: _selectedModel,
+        history: history,
+        currentStateJson: stateJson,
+      );
+    } on AiException catch (e) {
+      if (e.retryable) {
+        // One silent retry for server errors
+        return await _geminiService.sendPrompt(
+          text,
+          imageBytes: _processedImage,
+          model: _selectedModel,
+          history: history,
+          currentStateJson: stateJson,
+        );
+      }
+      rethrow;
+    }
   }
 
   void applyPendingEdits() {

@@ -99,6 +99,25 @@ class _ChatPanelState extends State<ChatPanel> {
   }
 
   Widget _buildMessageBubble(ChatMessage msg) {
+    final Color bgColor;
+    final Color borderColor;
+    final Color textColor;
+
+    switch (msg.type) {
+      case MessageType.user:
+        bgColor = AppColors.highlight.withValues(alpha: 0.15);
+        borderColor = AppColors.highlight.withValues(alpha: 0.3);
+        textColor = AppColors.highlight;
+      case MessageType.ai:
+        bgColor = AppColors.bg;
+        borderColor = AppColors.muted;
+        textColor = AppColors.accent;
+      case MessageType.error:
+        bgColor = Colors.red.withValues(alpha: 0.1);
+        borderColor = Colors.red.withValues(alpha: 0.3);
+        textColor = Colors.red.shade300;
+    }
+
     return Align(
       alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
@@ -108,21 +127,24 @@ class _ChatPanelState extends State<ChatPanel> {
           maxWidth: MediaQuery.of(context).size.width * 0.7,
         ),
         decoration: BoxDecoration(
-          color: msg.isUser
-              ? AppColors.highlight.withValues(alpha: 0.15)
-              : AppColors.bg,
+          color: bgColor,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(
-            color: msg.isUser ? AppColors.highlight.withValues(alpha: 0.3) : AppColors.muted,
-            width: 0.5,
-          ),
+          border: Border.all(color: borderColor, width: 0.5),
         ),
-        child: Text(
-          msg.text,
-          style: TextStyle(
-            color: msg.isUser ? AppColors.highlight : AppColors.accent,
-            fontSize: 13,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (msg.isError) ...[
+              Icon(Icons.warning_amber_rounded, color: textColor, size: 14),
+              const SizedBox(width: 6),
+            ],
+            Flexible(
+              child: Text(
+                msg.text,
+                style: TextStyle(color: textColor, fontSize: 13),
+              ),
+            ),
+          ],
         ),
       ),
     );
