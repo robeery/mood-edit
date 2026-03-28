@@ -122,6 +122,12 @@ RULES:
         type: AiErrorType.unknown,
         message: 'Connection failed. Check your internet.',
       );
+    } on http.ClientException {
+      throw const AiException(
+        type: AiErrorType.unknown,
+        message: 'Connection interrupted. Please try again.',
+        retryable: true,
+      );
     }
 
     if (response.statusCode != 200) {
